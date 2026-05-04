@@ -17,9 +17,7 @@ function saveCfg() {
   localStorage.setItem('cfg_gist_token', tok);
   GIST_ID = gid; GIST_TOKEN = tok;
   document.getElementById('cfg-screen').style.display = 'none';
-  document.getElementById('lock-screen').style.display = 'flex';
-  document.getElementById('pw-input').focus();
-  loadFromGist().then(()=>render());
+  loadFromGist().then(()=>{render();});
 }
 </script>
 <style>
@@ -528,18 +526,7 @@ async function manualSync() {
   render();
 }
 
-function checkPw() {
-  const val = document.getElementById('pw-input').value;
-  const correctPw = D.password || 'asd777553';
-  if (val === correctPw || val === 'asd777553') {
-    document.getElementById('lock-screen').style.display = 'none';
-    document.getElementById('sync-bar').style.display = 'flex';
-  } else {
-    document.getElementById('pw-error').style.display = 'block';
-    document.getElementById('pw-input').value = '';
-    setTimeout(() => document.getElementById('pw-error').style.display = 'none', 2000);
-  }
-}
+
 
 // D loaded from gist async, migrate handled in loadFromGist
 // local fallback init
@@ -1108,17 +1095,7 @@ function updateCfg(){
   if(tok){ localStorage.setItem('cfg_gist_token', tok); GIST_TOKEN = tok; }
   alert('連線設定已更新');
 }
-function changePassword(){
-  const cur = document.getElementById('pw-current').value;
-  const correct = D.password || 'asd777553';
-  if(cur !== correct) return alert('目前密碼錯誤');
-  const newPw = document.getElementById('pw-new').value;
-  D.password = newPw || '';
-  save();
-  alert(newPw ? '密碼已更新' : '密碼保護已關閉');
-  document.getElementById('pw-current').value = '';
-  document.getElementById('pw-new').value = '';
-}
+
 function exportData(){const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='理債手冊_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{D=JSON.parse(ev.target.result);save();render();alert('匯入成功');}catch{alert('格式錯誤');}};r.readAsText(f);}
 function clearData(){localStorage.removeItem('debt-v3');D=JSON.parse(JSON.stringify(DEF));save();render();hideCfm('cfm-clear');}
