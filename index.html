@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🍱 寶寶點餐單</title>
+<meta name="theme-color" content="#e8917a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="寶寶點餐">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#fdf6ec;--warm:#f5e6d0;--blush:#f2c4a0;
+  --rose:#e8917a;--deep:#c05a3a;--text:#3d2b1f;
+  --soft:#8b5e52;--card:rgba(255,255,255,0.92);
+  --shadow:rgba(192,90,58,0.12);
+  --green:#2e7d32;--gbg:#e8f5e9;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;
+  background-image:radial-gradient(circle at 10% 20%,rgba(242,196,160,.3) 0%,transparent 45%),
+  radial-gradient(circle at 90% 80%,rgba(232,145,122,.2) 0%,transparent 45%);}
+
+header{text-align:center;padding:1.3rem 1rem .65rem;}
+.ef{font-size:1.8rem;display:block;animation:fl 3s ease-in-out infinite;}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+header h1{font-family:'Noto Serif TC',serif;font-size:1.4rem;font-weight:700;color:var(--deep);margin-top:.2rem;letter-spacing:.05em;}
+
+/* TAB */
+.tab-nav{display:flex;max-width:580px;margin:0 auto .7rem;padding:0 1rem;gap:.5rem;}
+.tb{flex:1;padding:.55rem;border-radius:13px;border:1.5px solid var(--blush);background:white;
+  font-family:'Noto Serif TC',serif;font-size:.82rem;font-weight:700;color:var(--soft);cursor:pointer;transition:all .2s;}
+.tb.active{background:var(--warm);border-color:var(--rose);color:var(--deep);box-shadow:0 2px 10px var(--shadow);}
+
+.container{max-width:580px;margin:0 auto;padding:0 1rem 5rem;}
+.tp{display:none;} .tp.active{display:block;}
+
+/* BANNER */
+.banner{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;
+  padding:.85rem 1rem;margin-bottom:.85rem;box-shadow:0 4px 20px var(--shadow);}
+.bn-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;}
+.bn-label{font-family:'Noto Serif TC',serif;font-size:.75rem;font-weight:700;color:var(--soft);
+  letter-spacing:.06em;white-space:nowrap;min-width:60px;}
+.bn-content{flex:1;min-width:0;}
+.bn-empty{font-size:.78rem;color:var(--soft);opacity:.6;}
+.bn-item{display:flex;align-items:center;gap:.5rem;padding:.38rem .55rem;border-radius:10px;
+  background:var(--warm);margin-bottom:.28rem;}
+.bn-item.done{background:var(--gbg);}
+.bn-food{flex:1;font-size:.82rem;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bn-item.done .bn-food{text-decoration:line-through;color:var(--soft);}
+.rtag{display:inline-block;padding:.07rem .38rem;border-radius:100px;font-size:.62rem;font-weight:500;margin-right:.25rem;}
+.t-out{background:#fff3e0;color:#bf6000;} .t-hom{background:var(--gbg);color:var(--green);}
+.t-ok{background:var(--gbg);color:var(--green);}
+.rb{width:24px;height:24px;border-radius:50%;border:2px solid var(--blush);background:white;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;
+  transition:all .2s;flex-shrink:0;}
+.rb.done{background:var(--green);border-color:var(--green);color:white;}
+.rb:hover{border-color:var(--green);}
+.xb{background:none;border:none;color:var(--blush);cursor:pointer;font-size:.75rem;padding:.15rem;flex-shrink:0;transition:color .2s;}
+.xb:hover{color:var(--deep);}
+.bn-divider{height:1px;background:var(--blush);opacity:.4;margin:.4rem 0;}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
+.cal-nav button{background:none;border:1.5px solid var(--blush);border-radius:10px;
+  padding:.32rem .7rem;color:var(--deep);cursor:pointer;font-size:1rem;transition:all .2s;}
+.cal-nav button:hover{background:var(--warm);}
+.cal-month{font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--deep);}
+
+/* BIG CALENDAR GRID */
+.cal-wrap{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;
+  overflow:hidden;box-shadow:0 4px 20px var(--shadow);}
+.cwds{display:grid;grid-template-columns:repeat(7,1fr);background:var(--warm);}
+.cwd{text-align:center;padding:.38rem 0;font-size:.68rem;font-weight:600;color:var(--soft);}
+.cwd:first-child{color:#e05a5a;} .cwd:last-child{color:#5a7ae0;}
+.cdays{display:grid;grid-template-columns:repeat(7,1fr);}
+.cday{min-height:80px;padding:.3rem .22rem;border-top:1px solid rgba(242,196,160,.45);
+  cursor:pointer;transition:background .15s;display:flex;flex-direction:column;gap:2px;}
+.cday:hover{background:rgba(242,196,160,.18);}
+.cday.today{background:rgba(232,145,122,.07);}
+.cday.sel{background:rgba(192,90,58,.1);}
+.cday.other .dn{color:#ccc;}
+.cday.other{background:rgba(0,0,0,.01);}
+.dn-wrap{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.dn{font-size:.78rem;font-weight:600;line-height:20px;width:20px;text-align:center;flex-shrink:0;}
+.cday.today .dn{background:var(--rose);color:white;border-radius:50%;}
+.cday:nth-child(7n+1) .dn{color:#e05a5a;} .cday:nth-child(7n) .dn{color:#5a7ae0;}
+.cday.today:nth-child(7n+1) .dn,.cday.today:nth-child(7n) .dn{color:white;}
+/* meal slot pills */
+.slot{font-size:.56rem;line-height:1.35;border-radius:4px;padding:1px 3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;}
+.slot-din{background:rgba(232,145,122,.2);color:var(--deep);}
+.slot-lun{background:rgba(90,122,224,.13);color:#3a5ab8;}
+.slot-din.done-slot,.slot-lun.done-slot{opacity:.42;}
+.slot-empty{font-size:.52rem;color:#ccc;padding:1px 3px;}
+
+/* DETAIL */
+.detail{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;
+  padding:.95rem 1.1rem;margin-top:.8rem;box-shadow:0 4px 20px var(--shadow);}
+.dhead{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.7rem;padding-bottom:.5rem;border-bottom:1.5px dashed var(--blush);}
+.dhead-t{font-family:'Noto Serif TC',serif;font-size:.9rem;font-weight:700;color:var(--deep);}
+.add-btn{padding:.3rem .75rem;border-radius:10px;border:1.5px solid var(--rose);
+  background:white;color:var(--rose);font-size:.76rem;cursor:pointer;font-weight:600;transition:all .2s;}
+.add-btn:hover{background:var(--rose);color:white;}
+.drec{display:flex;align-items:center;gap:.55rem;padding:.48rem .6rem;border-radius:11px;
+  background:var(--warm);margin-bottom:.38rem;}
+.drec.done{background:var(--gbg);}
+.drec-info{flex:1;min-width:0;}
+.drec-tags{display:flex;gap:.22rem;flex-wrap:wrap;margin-bottom:.15rem;}
+.rtag-m{display:inline-block;padding:.07rem .38rem;border-radius:100px;font-size:.62rem;font-weight:500;}
+.t-din{background:rgba(232,145,122,.18);color:var(--deep);}
+.t-lun{background:rgba(90,122,224,.13);color:#3a5ab8;}
+.drec-content{font-size:.82rem;color:var(--text);line-height:1.5;}
+.drec.done .drec-content{text-decoration:line-through;color:var(--soft);}
+.norec{text-align:center;color:var(--soft);font-size:.8rem;padding:.85rem 0;opacity:.65;}
+
+/* ORDER FORM */
+.oform{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;
+  padding:1.05rem 1.1rem;margin-top:.75rem;box-shadow:0 4px 20px var(--shadow);}
+.fhead{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.8rem;padding-bottom:.5rem;border-bottom:1.5px dashed var(--blush);}
+.ftitle{font-family:'Noto Serif TC',serif;font-size:.88rem;font-weight:700;color:var(--deep);}
+.clo{background:none;border:none;color:var(--soft);cursor:pointer;font-size:1rem;padding:.2rem;}
+.trow{display:flex;gap:.4rem;margin-bottom:.75rem;}
+.tob{flex:1;padding:.48rem;border-radius:11px;border:1.5px solid var(--blush);background:white;
+  font-size:.76rem;color:var(--soft);cursor:pointer;transition:all .2s;font-weight:500;}
+.tob.active{background:var(--rose);border-color:var(--rose);color:white;box-shadow:0 2px 8px rgba(232,145,122,.35);}
+.sub{font-size:.7rem;color:var(--soft);font-weight:500;letter-spacing:.07em;margin:.68rem 0 .35rem;}
+.rg{display:flex;flex-direction:column;gap:.35rem;}
+.ri{display:flex;align-items:center;gap:.6rem;cursor:pointer;padding:.4rem .68rem;
+  border-radius:10px;border:1.5px solid transparent;transition:all .2s;}
+.ri:hover{background:var(--warm);}
+.ri input[type="radio"]{display:none;}
+.rdot{width:15px;height:15px;border-radius:50%;border:2px solid var(--blush);background:white;
+  flex-shrink:0;position:relative;transition:all .2s;}
+.rdot::after{content:'';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);width:6px;height:6px;
+  border-radius:50%;background:var(--rose);transition:transform .2s;}
+.ri input[type="radio"]:checked~.rdot{border-color:var(--rose);}
+.ri input[type="radio"]:checked~.rdot::after{transform:translate(-50%,-50%) scale(1);}
+.ri input[type="radio"]:checked~span{color:var(--deep);font-weight:500;}
+.ri.sel{background:rgba(232,145,122,.08);border-color:var(--blush);}
+.rl{font-size:.84rem;color:var(--text);}
+.cg{display:flex;flex-wrap:wrap;gap:.35rem;}
+.ci{display:flex;align-items:center;}
+.ci input[type="checkbox"]{display:none;}
+.chip{padding:.3rem .72rem;border-radius:100px;border:1.5px solid var(--blush);background:white;
+  font-size:.74rem;color:var(--soft);cursor:pointer;transition:all .2s;user-select:none;}
+.chip:hover{background:var(--warm);}
+.ci input[type="checkbox"]:checked+.chip{background:var(--rose);border-color:var(--rose);color:white;font-weight:500;}
+.oi{width:100%;margin-top:.5rem;padding:.44rem .78rem;border:1.5px solid var(--blush);
+  border-radius:10px;font-family:'Noto Sans TC',sans-serif;font-size:.8rem;
+  color:var(--text);background:white;outline:none;}
+.oi:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(232,145,122,.12);}
+.savebtn{width:100%;padding:.85rem;margin-top:.85rem;
+  background:linear-gradient(135deg,var(--rose),var(--deep));color:white;border:none;
+  border-radius:12px;font-family:'Noto Serif TC',serif;font-size:.88rem;font-weight:700;
+  letter-spacing:.1em;cursor:pointer;box-shadow:0 4px 18px rgba(192,90,58,.32);transition:all .25s;}
+.savebtn:hover{transform:translateY(-2px);}
+.fp{display:none;} .fp.active{display:block;}
+
+
+/* SUPPLY */
+.shop-mode-btn{padding:.28rem .75rem;border-radius:10px;border:1.5px solid var(--blush);background:white;color:var(--soft);font-size:.74rem;cursor:pointer;font-weight:600;transition:all .2s;}
+.shop-mode-btn.active{background:var(--rose);border-color:var(--rose);color:white;}
+.shop-banner{background:rgba(232,145,122,.12);border:1.5px solid var(--rose);border-radius:12px;padding:.6rem 1rem;margin-bottom:.7rem;font-size:.8rem;color:var(--deep);font-weight:600;}
+.srow{display:flex;align-items:center;gap:.55rem;padding:.52rem .65rem;border-radius:11px;border:1.5px solid transparent;transition:all .2s;margin-bottom:.3rem;}
+.srow:hover{background:var(--warm);}
+.srow.need{background:rgba(232,145,122,.08);border-color:rgba(232,145,122,.3);}
+.srow.out{background:#fce4ec;border-color:#f48fb1;}
+.srow.ok{background:var(--gbg);border-color:#a5d6a7;}
+.sname{flex:1;min-width:0;}
+.sname-text{font-size:.86rem;color:var(--text);font-weight:500;}
+.snote{font-size:.7rem;color:var(--soft);margin-top:.05rem;}
+.status-toggle{display:flex;gap:.3rem;flex-shrink:0;}
+.stb{padding:.22rem .5rem;border-radius:8px;border:1.5px solid var(--blush);background:white;font-size:.68rem;cursor:pointer;transition:all .15s;color:var(--soft);font-weight:500;}
+.stb.active-ok{background:#2e7d32;border-color:#2e7d32;color:white;}
+.stb.active-need{background:#e65100;border-color:#e65100;color:white;}
+.stb.active-out{background:#b71c1c;border-color:#b71c1c;color:white;}
+.notify-btn{background:none;border:none;font-size:.9rem;cursor:pointer;padding:.15rem;flex-shrink:0;opacity:.5;transition:opacity .2s;}
+.notify-btn:hover{opacity:1;}
+.scat-label{font-size:.64rem;color:var(--soft);background:var(--warm);padding:.08rem .4rem;border-radius:100px;margin-left:.25rem;}
+
+
+/* SUPPLY CARD GRID */
+.scard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-top:.2rem;}
+.scard{border-radius:14px;padding:.75rem .6rem;text-align:center;cursor:pointer;
+  transition:all .2s;border:2px solid transparent;position:relative;}
+.scard.ok{background:#e8f5e9;border-color:#a5d6a7;}
+.scard.need{background:#fff8e1;border-color:#ffcc80;}
+.scard.out{background:#fce4ec;border-color:#f48fb1;}
+.scard-icon{font-size:1.4rem;display:block;margin-bottom:.25rem;}
+.scard-name{font-size:.72rem;font-weight:600;color:var(--text);line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.scard-note{font-size:.6rem;color:var(--soft);margin-top:.1rem;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.scard-status{font-size:.62rem;font-weight:700;margin-top:.35rem;
+  padding:.15rem .45rem;border-radius:100px;display:inline-block;}
+.scard.ok .scard-status{background:#2e7d32;color:white;}
+.scard.need .scard-status{background:#e65100;color:white;}
+.scard.out .scard-status{background:#b71c1c;color:white;}
+.scard-del{position:absolute;top:.3rem;right:.35rem;background:none;border:none;
+  font-size:.7rem;color:rgba(0,0,0,.2);cursor:pointer;line-height:1;padding:.1rem;}
+.scard-del:hover{color:rgba(0,0,0,.5);}
+
+/* QTY MODAL */
+.qty-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);
+  z-index:200;display:flex;align-items:center;justify-content:center;}
+.qty-modal{background:white;border-radius:20px;padding:1.5rem 1.4rem;
+  width:88%;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.2);text-align:center;}
+.qty-modal-title{font-family:"Noto Serif TC",serif;font-size:1rem;
+  font-weight:700;color:var(--deep);margin-bottom:.3rem;}
+.qty-modal-sub{font-size:.78rem;color:var(--soft);margin-bottom:1rem;}
+.qty-modal input{width:100%;padding:.65rem .9rem;border:2px solid var(--blush);
+  border-radius:12px;font-size:1rem;text-align:center;outline:none;
+  font-family:"Noto Sans TC",sans-serif;color:var(--text);}
+.qty-modal input:focus{border-color:var(--rose);}
+.qty-modal-btns{display:flex;gap:.6rem;margin-top:1rem;}
+.qty-modal-btns button{flex:1;padding:.65rem;border-radius:12px;border:none;
+  font-family:"Noto Sans TC",sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;}
+.qm-cancel{background:var(--warm);color:var(--soft);}
+.qm-confirm{background:var(--rose);color:white;}
+
+
+/* CUSTOM HISTORY */
+.history-wrap{margin-top:.5rem;display:none;}
+.history-label{font-size:.7rem;color:var(--soft);margin-bottom:.35rem;letter-spacing:.05em;}
+.history-chips{display:flex;flex-wrap:wrap;gap:.35rem;}
+.hchip{display:flex;align-items:center;gap:.25rem;padding:.3rem .65rem;border-radius:100px;
+  border:1.5px solid var(--blush);background:var(--warm);
+  font-size:.78rem;color:var(--deep);cursor:pointer;transition:all .2s;}
+.hchip:hover{background:var(--rose);color:white;border-color:var(--rose);}
+.hchip-del{background:none;border:none;color:var(--blush);cursor:pointer;
+  font-size:.75rem;padding:0;line-height:1;flex-shrink:0;transition:color .2s;}
+.hchip:hover .hchip-del{color:rgba(255,255,255,.7);}
+
+/* FRIDGE */
+.fhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
+.ftit{font-family:'Noto Serif TC',serif;font-size:.95rem;font-weight:700;color:var(--deep);display:flex;align-items:center;gap:.35rem;}
+.fupd{font-size:.66rem;color:var(--soft);opacity:.75;}
+.fsum{display:flex;gap:.45rem;margin-bottom:.72rem;flex-wrap:wrap;}
+.fst{flex:1;min-width:54px;background:var(--warm);border-radius:10px;padding:.45rem .35rem;text-align:center;border:1.5px solid var(--blush);}
+.fsn{font-family:'Noto Serif TC',serif;font-size:1.08rem;font-weight:700;color:var(--deep);display:block;}
+.fsl{font-size:.62rem;color:var(--soft);}
+.fcard{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;padding:1rem 1.1rem;box-shadow:0 4px 20px var(--shadow);}
+.fcats{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.72rem;}
+.fcat{padding:.26rem .68rem;border-radius:100px;border:1.5px solid var(--blush);background:white;font-size:.72rem;color:var(--soft);cursor:pointer;transition:all .2s;}
+.fcat.active{background:var(--rose);border-color:var(--rose);color:white;}
+.frows{display:flex;flex-direction:column;gap:.35rem;}
+.frow{display:flex;align-items:center;gap:.5rem;padding:.44rem .55rem;border-radius:10px;border:1.5px solid transparent;transition:background .2s;}
+.frow:hover{background:var(--warm);}
+.fname{flex:1;font-size:.82rem;color:var(--text);}
+.qw{display:flex;align-items:center;gap:.28rem;}
+.qb{width:21px;height:21px;border-radius:50%;border:1.5px solid var(--blush);background:white;color:var(--deep);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.qb:hover{background:var(--rose);border-color:var(--rose);color:white;}
+.qv{min-width:1.5rem;text-align:center;font-size:.8rem;font-weight:600;color:var(--deep);}
+.sb{font-size:.62rem;padding:.08rem .38rem;border-radius:100px;font-weight:500;flex-shrink:0;}
+.sok{background:#e8f5e9;color:#2e7d32;} .slow{background:#fff8e1;color:#e65100;} .sout{background:#fce4ec;color:#b71c1c;}
+.fadd{display:flex;gap:.35rem;margin-top:.8rem;padding-top:.8rem;border-top:1.5px dashed var(--blush);flex-wrap:wrap;}
+.fadd input,.fadd select{flex:1;min-width:58px;padding:.4rem .55rem;border:1.5px solid var(--blush);border-radius:9px;font-family:'Noto Sans TC',sans-serif;font-size:.76rem;color:var(--text);background:white;outline:none;}
+.fadd input:focus,.fadd select:focus{border-color:var(--rose);}
+.fabtn{padding:.4rem .78rem;border-radius:9px;border:none;background:var(--rose);color:white;font-size:.76rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.fabtn:hover{background:var(--deep);}
+.femp{text-align:center;font-size:.78rem;color:var(--soft);opacity:.65;padding:.9rem 0;}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);
+  background:var(--deep);color:white;padding:.68rem 1.3rem;border-radius:100px;font-size:.8rem;
+  font-weight:500;box-shadow:0 4px 20px rgba(192,90,58,.4);
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<header>
+  <span class="ef">🍱</span>
+  <h1>寶寶點餐單</h1>
+</header>
+
+<div class="tab-nav">
+  <button class="tb active" id="tab-cal" onclick="switchTab('cal')">📅 點餐月曆</button>
+  <button class="tb" id="tab-fridge" onclick="switchTab('fridge')">❄️ 冰箱庫存</button>
+  <button class="tb" id="tab-supply" onclick="switchTab('supply')">🛒 家裡庫存</button>
+  <button class="tb" id="tab-beauty" onclick="switchTab('beauty')">💄 化妝品</button>
+</div>
+
+<div class="container">
+
+  <!-- 月曆 TAB -->
+  <div class="tp active" id="tp-cal">
+
+    <!-- 今日/明日速覽 -->
+    <div class="banner">
+      <div class="bn-row">
+        <div class="bn-label">🌙 今日晚餐</div>
+        <div class="bn-content" id="bn-din"><span class="bn-empty">尚未點晚餐</span></div>
+      </div>
+      <div class="bn-divider"></div>
+      <div class="bn-row">
+        <div class="bn-label">☀️ 今日午餐</div>
+        <div class="bn-content" id="bn-lun"><span class="bn-empty">尚未點明天午餐</span></div>
+      </div>
+    </div>
+
+    <!-- 月曆導航 -->
+    <div class="cal-nav">
+      <button onclick="chM(-1)">‹</button>
+      <div class="cal-month" id="calLabel"></div>
+      <button onclick="chM(1)">›</button>
+    </div>
+
+    <!-- 大月曆 -->
+    <div class="cal-wrap">
+      <div class="cwds">
+        <div class="cwd">日</div><div class="cwd">一</div><div class="cwd">二</div>
+        <div class="cwd">三</div><div class="cwd">四</div><div class="cwd">五</div><div class="cwd">六</div>
+      </div>
+      <div class="cdays" id="cdays"></div>
+    </div>
+
+    <!-- 日期詳情 -->
+    <div class="detail" id="detail-box">
+      <div class="dhead">
+        <div class="dhead-t" id="dtitle">📅 今日點餐</div>
+        <button class="add-btn" onclick="openForm()">＋ 新增點餐</button>
+      </div>
+      <div id="drecs"><div class="norec">載入中…</div></div>
+    </div>
+
+    <!-- 點餐表單 -->
+    <div class="oform" id="oform" style="display:none">
+      <div class="fhead">
+        <div class="ftitle" id="ftitle">📝 新增點餐</div>
+        <button class="clo" onclick="closeForm()">✕</button>
+      </div>
+      <!-- 日期選擇 -->
+      <div style="margin-bottom:.7rem">
+        <label style="font-size:.75rem;color:var(--soft);display:block;margin-bottom:.3rem">📅 用餐日期</label>
+        <input type="date" id="order-date" class="oi" style="width:100%">
+      </div>
+      <div class="trow">
+        <button class="tob active" id="mt-d" onclick="setMT('晚餐',this)">🌙 晚餐</button>
+        <button class="tob" id="mt-l" onclick="setMT('午餐',this)">☀️ 午餐</button>
+      </div>
+      <div class="trow">
+        <button class="tob active" id="sw-o" onclick="setMode('outside',this)">🥡 吃外面</button>
+        <button class="tob" id="sw-h" onclick="setMode('homemade',this)">👨‍🍳 寶寶煮</button>
+      </div>
+      <div class="fp active" id="fp-out">
+        <div class="rg">
+          <label class="ri" onclick="selR(this)"><input type="radio" name="out" value="泡菜炒飯"><div class="rdot"></div><span class="rl">🍳 泡菜炒飯</span></label>
+          <label class="ri" onclick="selR(this)"><input type="radio" name="out" value="好吃炒板條"><div class="rdot"></div><span class="rl">🍜 好吃炒板條</span></label>
+          <label class="ri" onclick="selR(this)"><input type="radio" name="out" value="__other__"><div class="rdot"></div><span class="rl">✏️ 其他</span></label>
+        </div>
+        <input class="oi" id="out-oth" placeholder="想吃什麼呢？✨" style="display:none">
+        <div class="history-wrap" id="history-wrap">
+          <div class="history-label">🕐 點過的：</div>
+          <div class="history-chips" id="history-chips"></div>
+        </div>
+      </div>
+      <div class="fp" id="fp-home">
+        <div class="sub">🌾 主食</div>
+        <div class="cg" id="cg-main">
+          <label class="ci"><input type="checkbox" value="地瓜"><span class="chip">🍠 地瓜</span></label>
+          <label class="ci"><input type="checkbox" value="馬鈴薯"><span class="chip">🥔 馬鈴薯</span></label>
+          <label class="ci"><input type="checkbox" value="白飯"><span class="chip">🍚 白飯</span></label>
+          <label class="ci"><input type="checkbox" value="紫米"><span class="chip">🍚 紫米</span></label>
+          <label class="ci"><input type="checkbox" value="南瓜"><span class="chip">🎃 南瓜</span></label>
+          <label class="ci"><input type="checkbox" value="年糕"><span class="chip">🍡 年糕</span></label>
+        </div>
+        <div class="sub">🥩 配菜</div>
+        <div class="cg" id="cg-side">
+          <label class="ci"><input type="checkbox" value="高麗菜滷肉"><span class="chip">🥬 高麗菜滷肉</span></label>
+          <label class="ci"><input type="checkbox" value="空心菜滷肉"><span class="chip">🌿 空心菜滷肉</span></label>
+          <label class="ci"><input type="checkbox" value="牛排"><span class="chip">🥩 牛排</span></label>
+          <label class="ci"><input type="checkbox" value="水煮蛋"><span class="chip">🥚 水煮蛋</span></label>
+          <label class="ci"><input type="checkbox" value="荷包蛋"><span class="chip">🍳 荷包蛋</span></label>
+          <label class="ci"><input type="checkbox" value="純滷肉飯"><span class="chip">🍖 純滷肉飯</span></label>
+          <label class="ci"><input type="checkbox" value="鮭魚"><span class="chip">🐟 鮭魚</span></label>
+          <label class="ci"><input type="checkbox" value="節瓜"><span class="chip">🥒 節瓜</span></label>
+          <label class="ci"><input type="checkbox" value="紅蘿蔔雜燴"><span class="chip">🥕 紅蘿蔔雜燴</span></label>
+        </div>
+        <div class="sub">🌶️ 小菜</div>
+        <div class="cg" id="cg-snack">
+          <label class="ci"><input type="checkbox" value="東泉醬"><span class="chip">🌶️ 東泉醬</span></label>
+          <label class="ci"><input type="checkbox" value="肉鬆"><span class="chip">🧂 肉鬆</span></label>
+        </div>
+        <input class="oi" id="home-oth" placeholder="還想加什麼？">
+      </div>
+      <button class="savebtn" onclick="saveOrder()">💾 儲存點餐</button>
+    </div>
+
+  </div>
+
+  <!-- 冰箱 TAB -->
+  <div class="tp" id="tp-fridge">
+    <div class="fhdr">
+      <div class="ftit">❄️ 冰箱庫存</div>
+      <div class="fupd" id="fupd"></div>
+    </div>
+    <div class="fsum" id="fsum"></div>
+    <div class="fcard">
+      <div class="fcats" id="fcats"></div>
+      <div class="frows" id="frows"></div>
+      <div class="fadd">
+        <select id="fncat">
+          <option value="蔬菜">🥦 蔬菜</option><option value="肉類">🥩 肉類</option>
+          <option value="水果">🍎 水果</option><option value="主食">🍚 主食</option>
+          <option value="蛋奶">🥚 蛋奶</option><option value="調味料">🧂 調味料</option>
+          <option value="其他">📦 其他</option>
+        </select>
+        <input type="text" id="fnname" placeholder="食材名稱">
+        <input type="number" id="fnqty" placeholder="數量" min="0" style="max-width:58px">
+        <input type="text" id="fnunit" placeholder="單位" style="max-width:48px">
+        <button class="fabtn" onclick="addFridge()">＋</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 家裡庫存 TAB -->
+  <div class="tp" id="tp-supply">
+    <div class="fhdr">
+      <div class="ftit">🛒 家裡庫存清單</div>
+      <button class="shop-mode-btn" id="shop-mode-btn" onclick="toggleShopMode()">🛍️ 購物清單模式</button>
+    </div>
+    <!-- 購物清單模式提示 -->
+    <div class="shop-banner" id="shop-banner" style="display:none">
+      <span>🛍️ 購物清單模式 — 以下是需要購買的品項</span>
+    </div>
+    <!-- 統計 -->
+    <div class="fsum" id="ssum"></div>
+    <div class="fcard">
+      <div class="fcats" id="scats"></div>
+      <div class="frows" id="srows"></div>
+      <!-- 新增品項 -->
+      <div class="fadd" id="sadd-row">
+        <select id="sncat">
+          <option value="盥洗用品">🪥 盥洗用品</option>
+          <option value="清潔用品">🧹 清潔用品</option>
+          <option value="日常用品">🧻 日常用品</option>
+          <option value="廚房">🍳 廚房</option>
+          <option value="阿咪">🐱 阿咪</option>
+          <option value="其他">📦 其他</option>
+        </select>
+        <input type="text" id="snname" placeholder="品名">
+        <input type="text" id="snnote" placeholder="備註（選填）" style="min-width:80px">
+        <button class="fabtn" onclick="addSupply()">＋</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 化妝品 TAB -->
+  <div class="tp" id="tp-beauty">
+    <div class="fhdr">
+      <div class="ftit">💄 化妝品備品</div>
+      <div class="fupd" id="bupd"></div>
+    </div>
+    <div class="fsum" id="bsum"></div>
+    <div class="fcard">
+      <div class="fcats" id="bcats"></div>
+      <div class="frows" id="brows"></div>
+      <div class="fadd">
+        <select id="bncat">
+          <option value="底妝">💄 底妝</option>
+          <option value="眼妝">👁️ 眼妝</option>
+          <option value="唇妝">💋 唇妝</option>
+          <option value="保養">🧴 保養</option>
+          <option value="卸妝">🧹 卸妝</option>
+          <option value="其他">📦 其他</option>
+        </select>
+        <input type="text" id="bnname" placeholder="品名">
+        <input type="text" id="bnnote" placeholder="備註（選填）" style="min-width:70px">
+        <button class="fabtn" onclick="addBeauty()">＋</button>
+      </div>
+    </div>
+  </div>
+
+<!-- 備品動作 Modal -->
+<div class="qty-modal-overlay" id="qty-modal" style="display:none" onclick="closeQtyModal(event)">
+  <div class="qty-modal">
+    <div class="qty-modal-title" id="qm-title">洗髮精</div>
+    <div class="qty-modal-sub">請選擇要執行的動作</div>
+    <!-- 補充好了按鈕 -->
+    <button class="qm-refill" onclick="doRefill()" style="width:100%;padding:.7rem;border-radius:12px;border:none;background:#2e7d32;color:white;font-size:.95rem;font-weight:700;cursor:pointer;margin-bottom:.75rem;">✅ 補充好了</button>
+    <!-- 快沒了區塊 -->
+    <div style="border:1.5px solid var(--blush);border-radius:12px;padding:.85rem;">
+      <div style="font-size:.8rem;font-weight:600;color:#e65100;margin-bottom:.5rem;">⚠️ 快沒了，還剩多少？</div>
+      <input type="text" id="qm-input" placeholder="例：2包、半瓶、1罐" style="width:100%;padding:.55rem .75rem;border:1.5px solid var(--blush);border-radius:10px;font-size:.9rem;margin-bottom:.55rem;outline:none;font-family:'Noto Sans TC',sans-serif;">
+      <button class="qm-confirm" onclick="confirmQtyModal()" style="width:100%;padding:.6rem;border-radius:10px;border:none;background:#e65100;color:white;font-size:.88rem;font-weight:600;cursor:pointer;">⚠️ 標記快沒並通知</button>
+    </div>
+    <button class="qm-cancel" onclick="closeQtyModal()" style="width:100%;padding:.55rem;border-radius:10px;border:1.5px solid var(--blush);background:white;color:var(--soft);font-size:.82rem;cursor:pointer;margin-top:.6rem;">取消</button>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- 不用 type=module，改成普通 script，避免作用域問題 -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script>
+// ── Firebase init ──────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyCkRVxaM8INj9gy62MEG5ko6nH7t-3uDJw",
+  authDomain:"eatwhat-49d7b.firebaseapp.com",
+  databaseURL:"https://eatwhat-49d7b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"eatwhat-49d7b",
+  storageBucket:"eatwhat-49d7b.firebasestorage.app",
+  messagingSenderId:"625504079548",
+  appId:"1:625504079548:web:918ecdb03230c8112bcab9"
+});
+var db = firebase.database();
+
+// ── State ──────────────────────────────────────────
+var NOW    = new Date();
+var TODAY  = fd(NOW);
+var TOMORROW = addD(TODAY,1);
+var vy = NOW.getFullYear(), vm = NOW.getMonth();
+var selDate = TODAY;
+var mt = '晚餐', mode = 'outside', fcat = 'all';
+var allR = {}, fridgeD = {};
+var CAT = {'蔬菜':'🥦','肉類':'🥩','水果':'🍎','主食':'🍚','蛋奶':'🥚','調味料':'🧂','其他':'📦'};
+
+function fd(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
+function p2(n){return String(n).padStart(2,'0');}
+function addD(s,n){var d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return fd(d);}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+
+// ── Tab ────────────────────────────────────────────
+function switchTab(tab){
+  ['cal','fridge','supply','beauty'].forEach(function(t){
+    document.getElementById('tp-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  });
+}
+
+// ── Calendar ───────────────────────────────────────
+function chM(d){
+  vm+=d;
+  if(vm>11){vm=0;vy++;}
+  if(vm<0){vm=11;vy--;}
+  renderCal();
+}
+
+function renderCal(){
+  document.getElementById('calLabel').textContent=vy+' 年 '+(vm+1)+' 月';
+  var f=new Date(vy,vm,1).getDay();
+  var dim=new Date(vy,vm+1,0).getDate();
+  var dip=new Date(vy,vm,0).getDate();
+  var tot=f+dim; tot=tot%7===0?tot:tot+(7-tot%7);
+  var h='';
+  for(var i=0;i<tot;i++){
+    var d,mo=vm,yr=vy,oth=false;
+    if(i<f){d=dip-f+i+1;mo=vm-1;if(mo<0){mo=11;yr--;}oth=true;}
+    else if(i>=f+dim){d=i-f-dim+1;mo=vm+1;if(mo>11){mo=0;yr++;}oth=true;}
+    else{d=i-f+1;}
+    var ds=yr+'-'+p2(mo+1)+'-'+p2(d);
+    var isT=ds===TODAY, isSel=ds===selDate;
+    var cls='cday'+(oth?' other':'')+(isT?' today':'')+(isSel?' sel':'');
+
+    // find meals for this day
+    var dins=Object.values(allR).filter(function(r){return r.date===ds&&r.meal==='晚餐';});
+    var luns=Object.values(allR).filter(function(r){return r.date===ds&&r.meal==='午餐';});
+
+    var dinSlot = dins.length
+      ? '<div class="slot slot-din'+(dins[0].ready?' done-slot':'')+'">🌙'+sh(dins[0])+'</div>'
+      : '<div class="slot-empty">晚餐</div>';
+    var lunSlot = luns.length
+      ? '<div class="slot slot-lun'+(luns[0].ready?' done-slot':'')+'">☀️'+sh(luns[0])+'</div>'
+      : '<div class="slot-empty">午餐</div>';
+
+    h+='<div class="'+cls+'" onclick="selDay(\''+ds+'\')">'
+      +'<div class="dn-wrap"><div class="dn">'+d+'</div></div>'
+      +dinSlot+lunSlot
+      +'</div>';
+  }
+  document.getElementById('cdays').innerHTML=h;
+  renderBanner();
+}
+
+function sh(r){
+  if(!r||!r.content)return'';
+  if(r.content.type==='outside')return r.content.food||'';
+  var p=[];
+  if(r.content.main&&r.content.main.length)p.push(r.content.main[0]);
+  if(r.content.side&&r.content.side.length)p.push(r.content.side[0]);
+  return p.join('+')||'自煮';
+}
+
+// ── Banner ─────────────────────────────────────────
+function renderBanner(){
+  var de=Object.entries(allR).filter(function(e){return e[1].date===TODAY&&e[1].meal==='晚餐';});
+  var le=Object.entries(allR).filter(function(e){return e[1].date===TODAY&&e[1].meal==='午餐';});
+  var dinEl=document.getElementById('bn-din');
+  var lunEl=document.getElementById('bn-lun');
+  dinEl.innerHTML=de.length?bnItems(de):'<span class="bn-empty">尚未點晚餐</span>';
+  lunEl.innerHTML=le.length?bnItems(le):'<span class="bn-empty">尚未點今日午餐</span>';
+}
+function bnItems(es){
+  return es.map(function(e){
+    var k=e[0],r=e[1];
+    return '<div class="bn-item'+(r.ready?' done':'')+'">'+
+      '<div class="bn-food"><span class="rtag '+(r.content&&r.content.type==='outside'?'t-out':'t-hom')+'">'+(r.content&&r.content.type==='outside'?'外面':'自煮')+'</span>'+fc(r.content)+'</div>'+
+      '<button class="rb'+(r.ready?' done':'')+'" onclick="togReady(\''+k+'\','+!!r.ready+')">'+(r.ready?'✓':'○')+'</button>'+
+      '<button class="xb" onclick="delR(\''+k+'\')">✕</button>'+
+      '</div>';
+  }).join('');
+}
+
+// ── Detail ─────────────────────────────────────────
+function selDay(ds){
+  selDate=ds;
+  renderCal();
+  renderDetail();
+  document.getElementById('oform').style.display='none';
+}
+
+function renderDetail(){
+  var parts=selDate.split('-');
+  var yr=parts[0],mo=parseInt(parts[1]),dd=parseInt(parts[2]);
+  document.getElementById('dtitle').textContent=yr+'年'+mo+'月'+dd+'日';
+  var recs=Object.entries(allR).filter(function(e){return e[1].date===selDate;})
+    .sort(function(a,b){return(b[1].ts||0)-(a[1].ts||0);});
+  var el=document.getElementById('drecs');
+  if(!recs.length){el.innerHTML='<div class="norec">這天還沒有點餐記錄 🌸</div>';return;}
+  el.innerHTML=recs.map(function(e){
+    var k=e[0],r=e[1];
+    return '<div class="drec'+(r.ready?' done':'')+'">'+
+      '<div class="drec-info">'+
+        '<div class="drec-tags">'+
+          '<span class="rtag-m '+(r.meal==='晚餐'?'t-din':'t-lun')+'">'+(r.meal==='晚餐'?'🌙 晚餐':'☀️ 午餐')+'</span>'+
+          '<span class="rtag '+(r.content&&r.content.type==='outside'?'t-out':'t-hom')+'">'+(r.content&&r.content.type==='outside'?'吃外面':'寶寶煮')+'</span>'+
+          (r.ready?'<span class="rtag t-ok">✓ 已準備</span>':'')+'</div>'+
+        '<div class="drec-content">'+fc(r.content)+'</div>'+
+      '</div>'+
+      '<button class="rb'+(r.ready?' done':'')+'" onclick="togReady(\''+k+'\','+!!r.ready+')">'+(r.ready?'✓':'○')+'</button>'+
+      '<button class="xb" onclick="delR(\''+k+'\')">✕</button>'+
+    '</div>';
+  }).join('');
+}
+
+function fc(c){
+  if(!c)return'';
+  if(c.type==='outside')return c.food||'';
+  var p=[];
+  if(c.main&&c.main.length)p.push('<b>主食：</b>'+c.main.join('、'));
+  if(c.side&&c.side.length)p.push('<b>配菜：</b>'+c.side.join('、'));
+  if(c.snack&&c.snack.length)p.push('<b>小菜：</b>'+c.snack.join('、'));
+  if(c.other)p.push('<b>其他：</b>'+c.other);
+  return p.join('<br>')||'寶寶煮';
+}
+
+function togReady(k,cur){
+  db.ref('records/'+k).update({ready:!cur});
+  toast(!cur?'✓ 準備完成！':'已取消準備狀態');
+}
+function delR(k){
+  db.ref('records/'+k).remove();
+  toast('已刪除');
+}
+
+// ── Form ───────────────────────────────────────────
+function openForm(){
+  var f=document.getElementById('oform');
+  f.style.display='block';
+  f.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // default date = selected date
+  document.getElementById('order-date').value=selDate;
+  setMT('晚餐',document.getElementById('mt-d'));
+  updFTitle();
+}
+function closeForm(){document.getElementById('oform').style.display='none';}
+
+function setMT(type,btn){
+  mt=type;
+  document.querySelectorAll('#mt-d,#mt-l').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  updFTitle();
+}
+function setMode(m,btn){
+  mode=m;
+  document.getElementById('fp-out').classList.toggle('active',m==='outside');
+  document.getElementById('fp-home').classList.toggle('active',m==='homemade');
+  document.querySelectorAll('#sw-o,#sw-h').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+}
+function updFTitle(){
+  var sd=document.getElementById('order-date')?document.getElementById('order-date').value||selDate:selDate;
+  var parts=sd.split('-');
+  document.getElementById('ftitle').textContent='📝 '+parts[0]+'年'+parseInt(parts[1])+'月'+parseInt(parts[2])+'日 '+mt;
+}
+function selR(el){
+  document.querySelectorAll('.ri').forEach(function(i){i.classList.remove('sel');});
+  el.classList.add('sel');
+  var v=el.querySelector('input[type="radio"]').value;
+  var oi=document.getElementById('out-oth');
+  var hw=document.getElementById('history-wrap');
+  oi.style.display=v==='__other__'?'block':'none';
+  hw.style.display=v==='__other__'?'block':'none';
+  if(v==='__other__'){oi.focus();renderHistory();}
+}
+function gchk(id){
+  return Array.from(document.querySelectorAll('#'+id+' input[type="checkbox"]:checked')).map(function(c){return c.value;});
+}
+
+// ── Ntfy 通知 ──────────────────────────────────────
+var NTFY_TOPIC = 'baibao-meal-shen2026';
+
+function sendNtfy(title, body){
+  fetch('https://ntfy.sh/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      topic: NTFY_TOPIC,
+      title: title,
+      message: body,
+      priority: 3,
+      tags: ['bento']
+    })
+  })
+  .then(function(r){console.log('ntfy:',r.status);})
+  .catch(function(e){console.error('ntfy error:',e);});
+}
+
+function fcLabel(c){
+  if(!c)return'';
+  if(c.type==='outside')return c.food||'';
+  var p=[];
+  if(c.main&&c.main.length)p.push(c.main.join('、'));
+  if(c.side&&c.side.length)p.push(c.side.join('、'));
+  if(c.other)p.push(c.other);
+  return p.join(' + ')||'寶寶煮';
+}
+
+// ── Custom food history ────────────────────────────
+function getHistory(){
+  try{return JSON.parse(localStorage.getItem('foodHistory')||'[]');}catch{return[];}
+}
+function saveToHistory(food){
+  var h=getHistory().filter(function(f){return f!==food;});
+  h.unshift(food);
+  if(h.length>10)h=h.slice(0,10);
+  localStorage.setItem('foodHistory',JSON.stringify(h));
+}
+function deleteHistory(food){
+  var h=getHistory().filter(function(f){return f!==food;});
+  localStorage.setItem('foodHistory',JSON.stringify(h));
+  renderHistory();
+}
+function renderHistory(){
+  var h=getHistory();
+  var wrap=document.getElementById('history-wrap');
+  var chips=document.getElementById('history-chips');
+  if(!h.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  chips.innerHTML=h.map(function(f){
+    return '<div class="hchip" data-food="'+f+'">'+
+      '<span>'+f+'</span>'+
+      '<button class="hchip-del" data-food="'+f+'">✕</button>'+
+    '</div>';
+  }).join('');
+  chips.querySelectorAll('.hchip').forEach(function(chip){
+    chip.addEventListener('click',function(e){
+      if(e.target.classList.contains('hchip-del')){
+        e.stopPropagation();
+        deleteHistory(this.getAttribute('data-food'));
+        return;
+      }
+      var food=this.getAttribute('data-food');
+      document.getElementById('out-oth').value=food;
+      toast('已選：'+food+' ✅');
+    });
+  });
+  chips.querySelectorAll('.hchip-del').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      deleteHistory(this.getAttribute('data-food'));
+    });
+  });
+}
+
+function saveOrder(){
+  var content;
+  if(mode==='outside'){
+    var sel=document.querySelector('input[name="out"]:checked');
+    if(!sel){toast('請選擇要吃什麼 🍴');return;}
+    var food=sel.value;
+    if(food==='__other__'){food=document.getElementById('out-oth').value.trim();if(!food){toast('請填寫其他 ✏️');return;}
+      saveToHistory(food);}
+    content={type:'outside',food:food};
+  }else{
+    var main=gchk('cg-main'),side=gchk('cg-side'),snack=gchk('cg-snack');
+    var other=document.getElementById('home-oth').value.trim();
+    if(!main.length&&!side.length&&!snack.length&&!other){toast('請至少勾選一個品項 🥘');return;}
+    content={type:'homemade',main:main,side:side,snack:snack,other:other};
+  }
+  var sd=document.getElementById('order-date').value||selDate;
+  var parts=sd.split('-');
+  var dateLabel=parseInt(parts[1])+'月'+parseInt(parts[2])+'日';
+  var mealLabel=mt==='午餐'?'午餐':'晚餐';
+  db.ref('records').push({date:sd,meal:mt,content:content,ready:false,ts:Date.now()})
+    .then(function(){
+      toast('已儲存！開飯囉 🎉');
+      resetForm();
+      closeForm();
+      // 發送 Ntfy 通知
+      sendNtfy(
+        '🍱 '+dateLabel+' '+mealLabel+'點餐啦！',
+        fcLabel(content)+(content.type==='outside'?' 🥡':' 👨‍🍳')
+      );
+    })
+    .catch(function(){toast('儲存失敗，請確認網路 ⚠️');});
+}
+function resetForm(){
+  document.querySelectorAll('input[name="out"]').forEach(function(r){r.checked=false;});
+  document.querySelectorAll('.ri').forEach(function(i){i.classList.remove('sel');});
+  document.getElementById('out-oth').style.display='none';
+  document.getElementById('out-oth').value='';
+  document.querySelectorAll('#fp-home input[type="checkbox"]').forEach(function(c){c.checked=false;});
+  document.getElementById('home-oth').value='';
+}
+
+// ── Fridge ─────────────────────────────────────────
+function addFridge(){
+  var cat=document.getElementById('fncat').value;
+  var name=document.getElementById('fnname').value.trim();
+  var qty=parseFloat(document.getElementById('fnqty').value)||1;
+  var unit=document.getElementById('fnunit').value.trim()||'份';
+  if(!name){toast('請輸入食材名稱 🥕');return;}
+  db.ref('fridge').push({cat:cat,name:name,qty:qty,unit:unit,updatedAt:Date.now()});
+  document.getElementById('fnname').value='';
+  document.getElementById('fnqty').value='';
+  document.getElementById('fnunit').value='';
+  toast('已加入 '+name+' ✅');
+}
+function updQty(k,d){
+  var i=fridgeD[k];if(!i)return;
+  db.ref('fridge/'+k).update({qty:Math.max(0,(i.qty||0)+d),updatedAt:Date.now()});
+}
+function delFridge(k){db.ref('fridge/'+k).remove();toast('已移除');}
+function setFC(c){fcat=c;renderFridge(fridgeD);}
+function ss(q){if(q===0)return{c:'sout',l:'已用完'};if(q<=1)return{c:'slow',l:'快用完'};return{c:'sok',l:'充足'};}
+
+function renderFridge(data){
+  fridgeD=data||{};
+  var all=Object.entries(fridgeD).map(function(e){return Object.assign({},e[1],{_k:e[0]});});
+  var lat=all.reduce(function(m,i){return Math.max(m,i.updatedAt||0);},0);
+  document.getElementById('fupd').textContent=lat?'更新：'+new Date(lat).toLocaleString('zh-TW'):'';
+  var tot=all.length,out=all.filter(function(i){return i.qty===0;}).length;
+  var low=all.filter(function(i){return i.qty>0&&i.qty<=1;}).length;
+  document.getElementById('fsum').innerHTML=
+    '<div class="fst"><span class="fsn">'+tot+'</span><span class="fsl">總品項</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#2e7d32">'+(tot-out-low)+'</span><span class="fsl">充足</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#e65100">'+low+'</span><span class="fsl">快用完</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#b71c1c">'+out+'</span><span class="fsl">用完</span></div>';
+  var cats=['all'].concat([...new Set(all.map(function(i){return i.cat;}))]);
+  document.getElementById('fcats').innerHTML=cats.map(function(c){
+    return '<button class="fcat'+(fcat===c?' active':'')+'" onclick="setFC(\''+c+'\')">'+(c==='all'?'🗂️ 全部':(CAT[c]||'📦')+' '+c)+'</button>';
+  }).join('');
+  var fil=fcat==='all'?all:all.filter(function(i){return i.cat===fcat;});
+  var rows=document.getElementById('frows');
+  if(!fil.length){rows.innerHTML='<div class="femp">'+(all.length?'此分類沒有食材':'冰箱是空的 🧊')+'</div>';return;}
+  rows.innerHTML=fil.map(function(i){
+    var s=ss(i.qty);
+    return '<div class="frow">'+
+      '<span style="font-size:.9rem">'+(CAT[i.cat]||'📦')+'</span>'+
+      '<span class="fname">'+i.name+'</span>'+
+      '<div class="qw">'+
+        '<button class="qb" onclick="updQty(\''+i._k+'\',-1)">−</button>'+
+        '<span class="qv">'+i.qty+'<small style="font-size:.58rem;font-weight:400;color:var(--soft)"> '+i.unit+'</small></span>'+
+        '<button class="qb" onclick="updQty(\''+i._k+'\',1)">＋</button>'+
+      '</div>'+
+      '<span class="sb '+s.c+'">'+s.l+'</span>'+
+      '<button class="xb" onclick="delFridge(\''+i._k+'\')">✕</button>'+
+    '</div>';
+  }).join('');
+}
+
+
+// ── Beauty (化妝品備品) ─────────────────────────────
+var BCAT={'底妝':'💄','眼妝':'👁️','唇妝':'💋','保養':'🧴','卸妝':'🧹','其他':'📦'};
+var beautyD={}, bcat='all';
+
+var DEFAULT_BEAUTY=[
+  {cat:'底妝',name:'粉底液'},{cat:'底妝',name:'氣墊'},{cat:'底妝',name:'蜜粉'},
+  {cat:'眼妝',name:'眼線筆'},{cat:'眼妝',name:'睫毛膏'},{cat:'眼妝',name:'眼影'},
+  {cat:'唇妝',name:'口紅'},{cat:'唇妝',name:'唇釉'},
+  {cat:'保養',name:'化妝水'},{cat:'保養',name:'乳液'},{cat:'保養',name:'防曬'},{cat:'保養',name:'精華液'},
+  {cat:'卸妝',name:'卸妝油'},{cat:'卸妝',name:'卸妝棉'}
+];
+
+function seedBeauty(){
+  db.ref('beauty').once('value',function(snap){
+    if(!snap.val()){
+      DEFAULT_BEAUTY.forEach(function(item){
+        db.ref('beauty').push({cat:item.cat,name:item.name,note:'',status:'ok',updatedAt:Date.now()});
+      });
+    }
+  });
+}
+
+function addBeauty(){
+  var cat=document.getElementById('bncat').value;
+  var name=document.getElementById('bnname').value.trim();
+  var note=document.getElementById('bnnote').value.trim();
+  if(!name){toast('請輸入品名 💄');return;}
+  db.ref('beauty').push({cat:cat,name:name,note:note,status:'ok',updatedAt:Date.now()});
+  document.getElementById('bnname').value='';
+  document.getElementById('bnnote').value='';
+  toast('已加入 '+name+' ✅');
+}
+
+function delBeauty(k){db.ref('beauty/'+k).remove();toast('已移除');}
+function setBCat(c){bcat=c;renderBeauty(beautyD);}
+
+var bQmKey='', bQmItemName='';
+function openBeautyModal(key,name){
+  bQmKey=key; bQmItemName=name;
+  // reuse qty modal
+  document.getElementById('qm-title').textContent=name;
+  document.getElementById('qm-input').value='';
+  document.getElementById('qty-modal').style.display='flex';
+}
+
+function renderBeauty(data){
+  beautyD=data||{};
+  var all=Object.entries(beautyD).map(function(e){return Object.assign({},e[1],{_k:e[0]});});
+  var lat=all.reduce(function(m,i){return Math.max(m,i.updatedAt||0);},0);
+  document.getElementById('bupd').textContent=lat?'更新：'+new Date(lat).toLocaleString('zh-TW'):'';
+
+  var tot=all.length,out=all.filter(function(i){return i.status==='out';}).length;
+  var need=all.filter(function(i){return i.status==='need';}).length;
+  document.getElementById('bsum').innerHTML=
+    '<div class="fst"><span class="fsn">'+tot+'</span><span class="fsl">總品項</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#2e7d32">'+(tot-out-need)+'</span><span class="fsl">充足</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#e65100">'+need+'</span><span class="fsl">快沒了</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#b71c1c">'+out+'</span><span class="fsl">用完</span></div>';
+
+  var cats=['all'].concat(Array.from(new Set(all.map(function(i){return i.cat;}))));
+  var catHtml='';
+  cats.forEach(function(c){
+    var nc=all.filter(function(i){return i.cat===c&&(i.status==='need'||i.status==='out');}).length;
+    var badge=nc&&c!=='all'?'<span style="background:#e05a5a;color:white;border-radius:100px;font-size:.6rem;padding:0 .35rem;margin-left:.25rem">'+nc+'</span>':'';
+    var lbl=c==='all'?'🗂️ 全部':(BCAT[c]||'📦')+' '+c;
+    catHtml+='<button class="fcat'+(bcat===c?' active':'')+'" data-cat="'+c+'">'+lbl+badge+'</button>';
+  });
+  document.getElementById('bcats').innerHTML=catHtml;
+  document.querySelectorAll('#bcats .fcat').forEach(function(btn){
+    btn.addEventListener('click',function(){setBCat(this.getAttribute('data-cat'));});
+  });
+
+  var display=bcat==='all'?all:all.filter(function(i){return i.cat===bcat;});
+  display.sort(function(a,b){var o={out:0,need:1,ok:2};return(o[a.status]||2)-(o[b.status]||2);});
+
+  var rows=document.getElementById('brows');
+  if(!display.length){rows.innerHTML='<div class="femp">此分類沒有品項</div>';return;}
+
+  var html='<div class="scard-grid">';
+  display.forEach(function(item){
+    var sc=item.status==='out'?'out':item.status==='need'?'need':'ok';
+    var statusLabel=item.status==='ok'?'✅ 充足':item.status==='need'?('⚠️ 快沒'+(item.qty?' 剩'+item.qty:'')):('❌ 用完');
+    var icon=BCAT[item.cat]||'📦';
+    html+='<div class="scard '+sc+'" data-key="'+item._k+'" data-name="'+item.name+'">'+
+      '<button class="scard-del" data-key="'+item._k+'">✕</button>'+
+      '<span class="scard-icon">'+icon+'</span>'+
+      '<div class="scard-name">'+item.name+'</div>'+
+      (item.note?'<div class="scard-note">'+item.note+'</div>':'')+
+      '<div class="scard-status">'+statusLabel+'</div>'+
+    '</div>';
+  });
+  html+='</div>';
+  rows.innerHTML=html;
+
+  rows.querySelectorAll('.scard').forEach(function(card){
+    card.addEventListener('click',function(e){
+      if(e.target.classList.contains('scard-del'))return;
+      // reuse supply modal but for beauty
+      bQmKey=this.getAttribute('data-key');
+      bQmItemName=this.getAttribute('data-name');
+      var cur=beautyD[bQmKey]?beautyD[bQmKey].status:'ok';
+      if(cur==='ok'){
+        // open action modal
+        qmKey=''; // clear supply key
+        document.getElementById('qm-title').textContent=bQmItemName;
+        document.getElementById('qm-input').value='';
+        document.getElementById('qty-modal').style.display='flex';
+        // override confirm to use beauty
+        window._beautyModalMode=true;
+      } else {
+        db.ref('beauty/'+bQmKey).update({status:'ok',qty:'',updatedAt:Date.now()});
+        toast('✅ 已補充好！');
+        bQmKey='';
+      }
+    });
+  });
+  rows.querySelectorAll('.scard-del').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      delBeauty(this.getAttribute('data-key'));
+    });
+  });
+}
+
+db.ref('beauty').on('value',function(snap){renderBeauty(snap.val()||{});});
+document.getElementById('bnname').addEventListener('keydown',function(e){if(e.key==='Enter')addBeauty();});
+seedBeauty();
+
+// ── Firebase listeners ─────────────────────────────
+db.ref('records').on('value',function(snap){
+  allR=snap.val()||{};
+  renderCal();
+  renderDetail();
+});
+db.ref('fridge').on('value',function(snap){
+  renderFridge(snap.val()||{});
+});
+
+// ── Init ───────────────────────────────────────────
+document.getElementById('fnname').addEventListener('keydown',function(e){if(e.key==='Enter')addFridge();});
+renderCal();
+selDay(TODAY);
+
+// ── Supply (家裡庫存) ───────────────────────────────
+var SCAT = {'盥洗用品':'🪥','清潔用品':'🧹','日常用品':'🧻','廚房':'🍳','阿咪':'🐱','其他':'📦'};
+var supplyD = {}, scat = 'all', shopMode = false;
+
+// Default items to seed if empty
+var DEFAULT_SUPPLY = [
+  {cat:'盥洗用品',name:'洗髮精'},{cat:'盥洗用品',name:'沐浴乳'},
+  {cat:'盥洗用品',name:'牙膏'},{cat:'盥洗用品',name:'洗手乳'},
+  {cat:'清潔用品',name:'洗碗精'},{cat:'清潔用品',name:'洗衣精'},
+  {cat:'清潔用品',name:'除臭劑'},{cat:'清潔用品',name:'垃圾袋'},
+  {cat:'日常用品',name:'衛生紙'},{cat:'日常用品',name:'濕紙巾'},
+  {cat:'廚房',name:'保鮮膜'},{cat:'廚房',name:'廚房紙巾'},
+  {cat:'廚房',name:'食用油'},{cat:'廚房',name:'鹽'},
+  {cat:'阿咪',name:'貓食',note:'皇家-室內成貓'},{cat:'阿咪',name:'貓砂',note:'藍鑽'},
+  {cat:'其他',name:'酒精'},{cat:'其他',name:'OK繃'}
+];
+
+function seedSupply(){
+  db.ref('supply').once('value',function(snap){
+    if(!snap.val()){
+      DEFAULT_SUPPLY.forEach(function(item){
+        db.ref('supply').push({cat:item.cat,name:item.name,note:item.note||'',status:'ok',updatedAt:Date.now()});
+      });
+    }
+  });
+}
+
+function toggleShopMode(){
+  shopMode=!shopMode;
+  document.getElementById('shop-mode-btn').classList.toggle('active',shopMode);
+  document.getElementById('shop-banner').style.display=shopMode?'block':'none';
+  document.getElementById('sadd-row').style.display=shopMode?'none':'flex';
+  renderSupply(supplyD);
+}
+
+function setSupplyStatus(k,status){
+  db.ref('supply/'+k).update({status:status,updatedAt:Date.now()});
+  if(status==='need'||status==='out'){
+    var item=supplyD[k];
+    if(item){
+      sendNtfy(
+        '🛒 '+(status==='out'?'已用完':'快沒了')+'：'+item.name,
+        item.cat+' · '+item.name+(item.note?' ('+item.note+')':'')
+      );
+    }
+  }
+}
+
+function addSupply(){
+  var cat=document.getElementById('sncat').value;
+  var name=document.getElementById('snname').value.trim();
+  var note=document.getElementById('snnote').value.trim();
+  if(!name){toast('請輸入品名 📦');return;}
+  db.ref('supply').push({cat:cat,name:name,note:note,status:'ok',updatedAt:Date.now()});
+  document.getElementById('snname').value='';
+  document.getElementById('snnote').value='';
+  toast('已加入 '+name+' ✅');
+}
+
+function delSupply(k){db.ref('supply/'+k).remove();toast('已刪除');}
+
+function setSCat(c){scat=c;renderSupply(supplyD);}
+
+// ── Qty Modal ──────────────────────────────────────
+var qmKey='', qmItemName='';
+
+function openActionModal(key, name){
+  qmKey=key; qmItemName=name;
+  document.getElementById('qm-title').textContent=name;
+  document.getElementById('qm-input').value='';
+  document.getElementById('qty-modal').style.display='flex';
+}
+function closeQtyModal(e){
+  if(e&&e.target!==document.getElementById('qty-modal'))return;
+  document.getElementById('qty-modal').style.display='none';
+  qmKey=''; qmItemName='';
+}
+function doRefill(){
+  if(window._beautyModalMode&&bQmKey){
+    db.ref('beauty/'+bQmKey).update({status:'ok',qty:'',updatedAt:Date.now()});
+    document.getElementById('qty-modal').style.display='none';
+    toast('✅ 已補充好！');
+    bQmKey='';window._beautyModalMode=false;return;
+  }
+  if(!qmKey)return;
+  db.ref('supply/'+qmKey).update({status:'ok',qty:'',updatedAt:Date.now()});
+  document.getElementById('qty-modal').style.display='none';
+  toast('✅ 已補充好！');
+  qmKey=''; qmItemName='';
+}
+function confirmQtyModal(){
+  var qty=document.getElementById('qm-input').value.trim();
+  if(window._beautyModalMode&&bQmKey){
+    db.ref('beauty/'+bQmKey).update({status:'need',qty:qty,updatedAt:Date.now()});
+    document.getElementById('qty-modal').style.display='none';
+    toast('已標記快沒 ⚠️');
+    bQmKey='';window._beautyModalMode=false;return;
+  }
+  if(!qmKey)return;
+  db.ref('supply/'+qmKey).update({status:'need',qty:qty,updatedAt:Date.now()});
+  var item=supplyD[qmKey];
+  if(item){
+    sendNtfy(
+      '⚠️ 快沒了：'+item.name,
+      item.name+(qty?' 剩 '+qty:'')+(item.note?' ('+item.note+')':'')
+    );
+  }
+  document.getElementById('qty-modal').style.display='none';
+  toast('已通知對方 ⚠️');
+  qmKey=''; qmItemName='';
+}
+
+function renderSupply(data){
+  supplyD=data||{};
+  var all=Object.entries(supplyD).map(function(e){return Object.assign({},e[1],{_k:e[0]});});
+  var display=shopMode?all.filter(function(i){return i.status==='need'||i.status==='out';}):all.slice();
+  if(scat!=='all') display=display.filter(function(i){return i.cat===scat;});
+
+  // summary
+  var tot=all.length;
+  var out=all.filter(function(i){return i.status==='out';}).length;
+  var need=all.filter(function(i){return i.status==='need';}).length;
+  document.getElementById('ssum').innerHTML=
+    '<div class="fst"><span class="fsn">'+tot+'</span><span class="fsl">總品項</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#2e7d32">'+(tot-out-need)+'</span><span class="fsl">充足</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#e65100">'+need+'</span><span class="fsl">快沒了</span></div>'+
+    '<div class="fst"><span class="fsn" style="color:#b71c1c">'+out+'</span><span class="fsl">用完</span></div>';
+
+  // cat tabs
+  var cats=['all'].concat(Array.from(new Set(all.map(function(i){return i.cat;}))));
+  var catHtml='';
+  cats.forEach(function(c){
+    var nc=all.filter(function(i){return i.cat===c&&(i.status==='need'||i.status==='out');}).length;
+    var badge=nc&&c!=='all'?'<span style="background:#e05a5a;color:white;border-radius:100px;font-size:.6rem;padding:0 .35rem;margin-left:.25rem">'+nc+'</span>':'';
+    var lbl=c==='all'?'🗂️ 全部':(SCAT[c]||'📦')+' '+c;
+    catHtml+='<button class="fcat'+(scat===c?' active':'')+'" data-cat="'+c+'">'+lbl+badge+'</button>';
+  });
+  document.getElementById('scats').innerHTML=catHtml;
+  document.querySelectorAll('#scats .fcat').forEach(function(btn){
+    btn.addEventListener('click',function(){setSCat(this.getAttribute('data-cat'));});
+  });
+
+  // card grid
+  var rows=document.getElementById('srows');
+  if(!display.length){
+    rows.innerHTML='<div class="femp">'+(shopMode?'太棒了！目前沒有需要採購的品項 🎉':'此分類沒有品項')+'</div>';
+    return;
+  }
+
+  // sort: out → need → ok
+  display.sort(function(a,b){
+    var o={out:0,need:1,ok:2};
+    return (o[a.status]||2)-(o[b.status]||2);
+  });
+
+  var html='<div class="scard-grid">';
+  display.forEach(function(item){
+    var sc=item.status==='out'?'out':item.status==='need'?'need':'ok';
+    var statusLabel='';
+    if(item.status==='ok') statusLabel='✅ 充足';
+    else if(item.status==='need') statusLabel='⚠️ 快沒'+(item.qty?' 剩'+item.qty:'');
+    else statusLabel='❌ 用完';
+    var icon=SCAT[item.cat]||'📦';
+    html+='<div class="scard '+sc+'" data-key="'+item._k+'" data-name="'+item.name+'">'+
+      (shopMode?'':'<button class="scard-del" data-key="'+item._k+'">✕</button>')+
+      '<span class="scard-icon">'+icon+'</span>'+
+      '<div class="scard-name">'+item.name+'</div>'+
+      (item.note?'<div class="scard-note">'+item.note+'</div>':'')+
+      '<div class="scard-status">'+statusLabel+'</div>'+
+    '</div>';
+  });
+  html+='</div>';
+  rows.innerHTML=html;
+
+  // click → open action modal
+  rows.querySelectorAll('.scard').forEach(function(card){
+    card.addEventListener('click',function(e){
+      if(e.target.classList.contains('scard-del'))return;
+      openActionModal(
+        this.getAttribute('data-key'),
+        this.getAttribute('data-name')
+      );
+    });
+  });
+
+  rows.querySelectorAll('.scard-del').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      delSupply(this.getAttribute('data-key'));
+    });
+  });
+}
+
+db.ref('supply').on('value',function(snap){
+  renderSupply(snap.val()||{});
+});
+
+document.getElementById('snname').addEventListener('keydown',function(e){if(e.key==='Enter')addSupply();});
+seedSupply();
+
+</script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});</script>
+</body>
+</html>
