@@ -2,1230 +2,1148 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>🍱 寶寶點餐單</title>
-<meta name="theme-color" content="#e8917a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="寶寶點餐">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理債手冊</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+const GIST_FILE = 'debt-data.json';
+let GIST_ID = localStorage.getItem('cfg_gist_id') || '';
+let GIST_TOKEN = localStorage.getItem('cfg_gist_token') || '';
+</script>
 <style>
-:root{
-  --cream:#fdf6ec;--warm:#f5e6d0;--blush:#f2c4a0;
-  --rose:#e8917a;--deep:#c05a3a;--text:#3d2b1f;
-  --soft:#8b5e52;--card:rgba(255,255,255,0.92);
-  --shadow:rgba(192,90,58,0.12);
-  --green:#2e7d32;--gbg:#e8f5e9;
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;
-  background-image:radial-gradient(circle at 10% 20%,rgba(242,196,160,.3) 0%,transparent 45%),
-  radial-gradient(circle at 90% 80%,rgba(232,145,122,.2) 0%,transparent 45%);}
-
-header{text-align:center;padding:1.3rem 1rem .65rem;}
-.ef{font-size:1.8rem;display:block;animation:fl 3s ease-in-out infinite;}
-@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-header h1{font-family:'Noto Serif TC',serif;font-size:1.4rem;font-weight:700;color:var(--deep);margin-top:.2rem;letter-spacing:.05em;}
-
-/* TAB */
-.tab-nav{display:flex;max-width:580px;margin:0 auto .7rem;padding:0 1rem;gap:.5rem;}
-.tb{flex:1;padding:.55rem;border-radius:13px;border:1.5px solid var(--blush);background:white;
-  font-family:'Noto Serif TC',serif;font-size:.82rem;font-weight:700;color:var(--soft);cursor:pointer;transition:all .2s;}
-.tb.active{background:var(--warm);border-color:var(--rose);color:var(--deep);box-shadow:0 2px 10px var(--shadow);}
-
-.container{max-width:580px;margin:0 auto;padding:0 1rem 5rem;}
-.tp{display:none;} .tp.active{display:block;}
-
-/* BANNER */
-.banner{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;
-  padding:.85rem 1rem;margin-bottom:.85rem;box-shadow:0 4px 20px var(--shadow);}
-.bn-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;}
-.bn-label{font-family:'Noto Serif TC',serif;font-size:.75rem;font-weight:700;color:var(--soft);
-  letter-spacing:.06em;white-space:nowrap;min-width:60px;}
-.bn-content{flex:1;min-width:0;}
-.bn-empty{font-size:.78rem;color:var(--soft);opacity:.6;}
-.bn-item{display:flex;align-items:center;gap:.5rem;padding:.38rem .55rem;border-radius:10px;
-  background:var(--warm);margin-bottom:.28rem;}
-.bn-item.done{background:var(--gbg);}
-.bn-food{flex:1;font-size:.82rem;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.bn-item.done .bn-food{text-decoration:line-through;color:var(--soft);}
-.rtag{display:inline-block;padding:.07rem .38rem;border-radius:100px;font-size:.62rem;font-weight:500;margin-right:.25rem;}
-.t-out{background:#fff3e0;color:#bf6000;} .t-hom{background:var(--gbg);color:var(--green);}
-.t-ok{background:var(--gbg);color:var(--green);}
-.rb{width:24px;height:24px;border-radius:50%;border:2px solid var(--blush);background:white;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;
-  transition:all .2s;flex-shrink:0;}
-.rb.done{background:var(--green);border-color:var(--green);color:white;}
-.rb:hover{border-color:var(--green);}
-.xb{background:none;border:none;color:var(--blush);cursor:pointer;font-size:.75rem;padding:.15rem;flex-shrink:0;transition:color .2s;}
-.xb:hover{color:var(--deep);}
-.bn-divider{height:1px;background:var(--blush);opacity:.4;margin:.4rem 0;}
-
+:root{--bg:#f2f1ef;--bg2:#fff;--bg3:#eae9e5;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);--text:#1a1a1a;--text2:#555;--text3:#aaa;--red:#c0392b;--green:#1e7e4a;--yellow:#9a6800;--blue:#1a6fbf;--mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh}
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(242,241,239,0.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;height:50px;gap:2px}
+.nav-title{font-size:11px;font-weight:500;color:var(--text3);margin-right:auto;letter-spacing:.08em}
+.nav-tab{padding:5px 9px;border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;border:none;background:none;font-family:var(--sans);transition:all .12s}
+.nav-tab:hover{background:var(--bg3)}
+.nav-tab.active{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+/* PAGE */
+.page{display:none;padding:12px;max-width:420px;margin:0 auto;padding-bottom:48px}
+.page.active{display:block}
+/* SECTION */
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px}
+.sec-lbl{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:6px}
+/* DEBT ROW - compact */
+.debt-row{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px}
+.debt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.debt-name{flex:1;font-size:13px;font-weight:500;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.debt-meta{font-size:11px;color:var(--text2);white-space:nowrap;font-family:var(--mono)}
+.debt-day{font-size:11px;color:var(--text3);white-space:nowrap;margin-left:4px}
+.debt-btns{display:flex;gap:4px;flex-shrink:0}
+/* METRIC GRID */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 8px}
+.metric-lbl{font-size:10px;color:var(--text3);margin-bottom:4px}
+.metric-val{font-family:var(--mono);font-size:14px;font-weight:500}
+/* ALERT */
+.alert{border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid;font-size:12px}
+.alert-red{background:rgba(192,57,43,.07);border-color:var(--red)}
+.alert-yellow{background:rgba(154,104,0,.07);border-color:var(--yellow)}
+.alert-title{font-weight:500;margin-bottom:2px}
+.alert-body{color:var(--text2);line-height:1.5}
+/* PROGRESS */
+.prog-wrap{margin:6px 0}
+.prog-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px}
+.prog-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s}
+/* CASHFLOW */
+.cf-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.cf-row:last-child{border-bottom:none}
+.cf-total{display:flex;justify-content:space-between;padding-top:8px;font-weight:500}
 /* CALENDAR */
-.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
-.cal-nav button{background:none;border:1.5px solid var(--blush);border-radius:10px;
-  padding:.32rem .7rem;color:var(--deep);cursor:pointer;font-size:1rem;transition:all .2s;}
-.cal-nav button:hover{background:var(--warm);}
-.cal-month{font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--deep);}
-
-/* BIG CALENDAR GRID */
-.cal-wrap{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;
-  overflow:hidden;box-shadow:0 4px 20px var(--shadow);}
-.cwds{display:grid;grid-template-columns:repeat(7,1fr);background:var(--warm);}
-.cwd{text-align:center;padding:.38rem 0;font-size:.68rem;font-weight:600;color:var(--soft);}
-.cwd:first-child{color:#e05a5a;} .cwd:last-child{color:#5a7ae0;}
-.cdays{display:grid;grid-template-columns:repeat(7,1fr);}
-.cday{min-height:80px;padding:.3rem .22rem;border-top:1px solid rgba(242,196,160,.45);
-  cursor:pointer;transition:background .15s;display:flex;flex-direction:column;gap:2px;}
-.cday:hover{background:rgba(242,196,160,.18);}
-.cday.today{background:rgba(232,145,122,.07);}
-.cday.sel{background:rgba(192,90,58,.1);}
-.cday.other .dn{color:#ccc;}
-.cday.other{background:rgba(0,0,0,.01);}
-.dn-wrap{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
-.dn{font-size:.78rem;font-weight:600;line-height:20px;width:20px;text-align:center;flex-shrink:0;}
-.cday.today .dn{background:var(--rose);color:white;border-radius:50%;}
-.cday:nth-child(7n+1) .dn{color:#e05a5a;} .cday:nth-child(7n) .dn{color:#5a7ae0;}
-.cday.today:nth-child(7n+1) .dn,.cday.today:nth-child(7n) .dn{color:white;}
-/* meal slot pills */
-.slot{font-size:.56rem;line-height:1.35;border-radius:4px;padding:1px 3px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;}
-.slot-din{background:rgba(232,145,122,.2);color:var(--deep);}
-.slot-lun{background:rgba(90,122,224,.13);color:#3a5ab8;}
-.slot-din.done-slot,.slot-lun.done-slot{opacity:.42;}
-.slot-empty{font-size:.52rem;color:#ccc;padding:1px 3px;}
-
-/* DETAIL */
-.detail{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;
-  padding:.95rem 1.1rem;margin-top:.8rem;box-shadow:0 4px 20px var(--shadow);}
-.dhead{display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:.7rem;padding-bottom:.5rem;border-bottom:1.5px dashed var(--blush);}
-.dhead-t{font-family:'Noto Serif TC',serif;font-size:.9rem;font-weight:700;color:var(--deep);}
-.add-btn{padding:.3rem .75rem;border-radius:10px;border:1.5px solid var(--rose);
-  background:white;color:var(--rose);font-size:.76rem;cursor:pointer;font-weight:600;transition:all .2s;}
-.add-btn:hover{background:var(--rose);color:white;}
-.drec{display:flex;align-items:center;gap:.55rem;padding:.48rem .6rem;border-radius:11px;
-  background:var(--warm);margin-bottom:.38rem;}
-.drec.done{background:var(--gbg);}
-.drec-info{flex:1;min-width:0;}
-.drec-tags{display:flex;gap:.22rem;flex-wrap:wrap;margin-bottom:.15rem;}
-.rtag-m{display:inline-block;padding:.07rem .38rem;border-radius:100px;font-size:.62rem;font-weight:500;}
-.t-din{background:rgba(232,145,122,.18);color:var(--deep);}
-.t-lun{background:rgba(90,122,224,.13);color:#3a5ab8;}
-.drec-content{font-size:.82rem;color:var(--text);line-height:1.5;}
-.drec.done .drec-content{text-decoration:line-through;color:var(--soft);}
-.norec{text-align:center;color:var(--soft);font-size:.8rem;padding:.85rem 0;opacity:.65;}
-
-/* ORDER FORM */
-.oform{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;
-  padding:1.05rem 1.1rem;margin-top:.75rem;box-shadow:0 4px 20px var(--shadow);}
-.fhead{display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:.8rem;padding-bottom:.5rem;border-bottom:1.5px dashed var(--blush);}
-.ftitle{font-family:'Noto Serif TC',serif;font-size:.88rem;font-weight:700;color:var(--deep);}
-.clo{background:none;border:none;color:var(--soft);cursor:pointer;font-size:1rem;padding:.2rem;}
-.trow{display:flex;gap:.4rem;margin-bottom:.75rem;}
-.tob{flex:1;padding:.48rem;border-radius:11px;border:1.5px solid var(--blush);background:white;
-  font-size:.76rem;color:var(--soft);cursor:pointer;transition:all .2s;font-weight:500;}
-.tob.active{background:var(--rose);border-color:var(--rose);color:white;box-shadow:0 2px 8px rgba(232,145,122,.35);}
-.sub{font-size:.7rem;color:var(--soft);font-weight:500;letter-spacing:.07em;margin:.68rem 0 .35rem;}
-.rg{display:flex;flex-direction:column;gap:.35rem;}
-.ri{display:flex;align-items:center;gap:.6rem;cursor:pointer;padding:.4rem .68rem;
-  border-radius:10px;border:1.5px solid transparent;transition:all .2s;}
-.ri:hover{background:var(--warm);}
-.ri input[type="radio"]{display:none;}
-.rdot{width:15px;height:15px;border-radius:50%;border:2px solid var(--blush);background:white;
-  flex-shrink:0;position:relative;transition:all .2s;}
-.rdot::after{content:'';position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%) scale(0);width:6px;height:6px;
-  border-radius:50%;background:var(--rose);transition:transform .2s;}
-.ri input[type="radio"]:checked~.rdot{border-color:var(--rose);}
-.ri input[type="radio"]:checked~.rdot::after{transform:translate(-50%,-50%) scale(1);}
-.ri input[type="radio"]:checked~span{color:var(--deep);font-weight:500;}
-.ri.sel{background:rgba(232,145,122,.08);border-color:var(--blush);}
-.rl{font-size:.84rem;color:var(--text);}
-.cg{display:flex;flex-wrap:wrap;gap:.35rem;}
-.ci{display:flex;align-items:center;}
-.ci input[type="checkbox"]{display:none;}
-.chip{padding:.3rem .72rem;border-radius:100px;border:1.5px solid var(--blush);background:white;
-  font-size:.74rem;color:var(--soft);cursor:pointer;transition:all .2s;user-select:none;}
-.chip:hover{background:var(--warm);}
-.ci input[type="checkbox"]:checked+.chip{background:var(--rose);border-color:var(--rose);color:white;font-weight:500;}
-.oi{width:100%;margin-top:.5rem;padding:.44rem .78rem;border:1.5px solid var(--blush);
-  border-radius:10px;font-family:'Noto Sans TC',sans-serif;font-size:.8rem;
-  color:var(--text);background:white;outline:none;}
-.oi:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(232,145,122,.12);}
-.savebtn{width:100%;padding:.85rem;margin-top:.85rem;
-  background:linear-gradient(135deg,var(--rose),var(--deep));color:white;border:none;
-  border-radius:12px;font-family:'Noto Serif TC',serif;font-size:.88rem;font-weight:700;
-  letter-spacing:.1em;cursor:pointer;box-shadow:0 4px 18px rgba(192,90,58,.32);transition:all .25s;}
-.savebtn:hover{transform:translateY(-2px);}
-.fp{display:none;} .fp.active{display:block;}
-
-
-/* SUPPLY */
-.shop-mode-btn{padding:.28rem .75rem;border-radius:10px;border:1.5px solid var(--blush);background:white;color:var(--soft);font-size:.74rem;cursor:pointer;font-weight:600;transition:all .2s;}
-.shop-mode-btn.active{background:var(--rose);border-color:var(--rose);color:white;}
-.shop-banner{background:rgba(232,145,122,.12);border:1.5px solid var(--rose);border-radius:12px;padding:.6rem 1rem;margin-bottom:.7rem;font-size:.8rem;color:var(--deep);font-weight:600;}
-.srow{display:flex;align-items:center;gap:.55rem;padding:.52rem .65rem;border-radius:11px;border:1.5px solid transparent;transition:all .2s;margin-bottom:.3rem;}
-.srow:hover{background:var(--warm);}
-.srow.need{background:rgba(232,145,122,.08);border-color:rgba(232,145,122,.3);}
-.srow.out{background:#fce4ec;border-color:#f48fb1;}
-.srow.ok{background:var(--gbg);border-color:#a5d6a7;}
-.sname{flex:1;min-width:0;}
-.sname-text{font-size:.86rem;color:var(--text);font-weight:500;}
-.snote{font-size:.7rem;color:var(--soft);margin-top:.05rem;}
-.status-toggle{display:flex;gap:.3rem;flex-shrink:0;}
-.stb{padding:.22rem .5rem;border-radius:8px;border:1.5px solid var(--blush);background:white;font-size:.68rem;cursor:pointer;transition:all .15s;color:var(--soft);font-weight:500;}
-.stb.active-ok{background:#2e7d32;border-color:#2e7d32;color:white;}
-.stb.active-need{background:#e65100;border-color:#e65100;color:white;}
-.stb.active-out{background:#b71c1c;border-color:#b71c1c;color:white;}
-.notify-btn{background:none;border:none;font-size:.9rem;cursor:pointer;padding:.15rem;flex-shrink:0;opacity:.5;transition:opacity .2s;}
-.notify-btn:hover{opacity:1;}
-.scat-label{font-size:.64rem;color:var(--soft);background:var(--warm);padding:.08rem .4rem;border-radius:100px;margin-left:.25rem;}
-
-
-/* SUPPLY CARD GRID */
-.scard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-top:.2rem;}
-.scard{border-radius:14px;padding:.75rem .6rem;text-align:center;cursor:pointer;
-  transition:all .2s;border:2px solid transparent;position:relative;}
-.scard.ok{background:#e8f5e9;border-color:#a5d6a7;}
-.scard.need{background:#fff8e1;border-color:#ffcc80;}
-.scard.out{background:#fce4ec;border-color:#f48fb1;}
-.scard-icon{font-size:1.4rem;display:block;margin-bottom:.25rem;}
-.scard-name{font-size:.72rem;font-weight:600;color:var(--text);line-height:1.3;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.scard-note{font-size:.6rem;color:var(--soft);margin-top:.1rem;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.scard-status{font-size:.62rem;font-weight:700;margin-top:.35rem;
-  padding:.15rem .45rem;border-radius:100px;display:inline-block;}
-.scard.ok .scard-status{background:#2e7d32;color:white;}
-.scard.need .scard-status{background:#e65100;color:white;}
-.scard.out .scard-status{background:#b71c1c;color:white;}
-.scard-del{position:absolute;top:.3rem;right:.35rem;background:none;border:none;
-  font-size:.7rem;color:rgba(0,0,0,.2);cursor:pointer;line-height:1;padding:.1rem;}
-.scard-del:hover{color:rgba(0,0,0,.5);}
-
-/* QTY MODAL */
-.qty-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);
-  z-index:200;display:flex;align-items:center;justify-content:center;}
-.qty-modal{background:white;border-radius:20px;padding:1.5rem 1.4rem;
-  width:88%;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.2);text-align:center;}
-.qty-modal-title{font-family:"Noto Serif TC",serif;font-size:1rem;
-  font-weight:700;color:var(--deep);margin-bottom:.3rem;}
-.qty-modal-sub{font-size:.78rem;color:var(--soft);margin-bottom:1rem;}
-.qty-modal input{width:100%;padding:.65rem .9rem;border:2px solid var(--blush);
-  border-radius:12px;font-size:1rem;text-align:center;outline:none;
-  font-family:"Noto Sans TC",sans-serif;color:var(--text);}
-.qty-modal input:focus{border-color:var(--rose);}
-.qty-modal-btns{display:flex;gap:.6rem;margin-top:1rem;}
-.qty-modal-btns button{flex:1;padding:.65rem;border-radius:12px;border:none;
-  font-family:"Noto Sans TC",sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;}
-.qm-cancel{background:var(--warm);color:var(--soft);}
-.qm-confirm{background:var(--rose);color:white;}
-
-
-/* CUSTOM HISTORY */
-.history-wrap{margin-top:.5rem;display:none;}
-.history-label{font-size:.7rem;color:var(--soft);margin-bottom:.35rem;letter-spacing:.05em;}
-.history-chips{display:flex;flex-wrap:wrap;gap:.35rem;}
-.hchip{display:flex;align-items:center;gap:.25rem;padding:.3rem .65rem;border-radius:100px;
-  border:1.5px solid var(--blush);background:var(--warm);
-  font-size:.78rem;color:var(--deep);cursor:pointer;transition:all .2s;}
-.hchip:hover{background:var(--rose);color:white;border-color:var(--rose);}
-.hchip-del{background:none;border:none;color:var(--blush);cursor:pointer;
-  font-size:.75rem;padding:0;line-height:1;flex-shrink:0;transition:color .2s;}
-.hchip:hover .hchip-del{color:rgba(255,255,255,.7);}
-
-/* FRIDGE */
-.fhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
-.ftit{font-family:'Noto Serif TC',serif;font-size:.95rem;font-weight:700;color:var(--deep);display:flex;align-items:center;gap:.35rem;}
-.fupd{font-size:.66rem;color:var(--soft);opacity:.75;}
-.fsum{display:flex;gap:.45rem;margin-bottom:.72rem;flex-wrap:wrap;}
-.fst{flex:1;min-width:54px;background:var(--warm);border-radius:10px;padding:.45rem .35rem;text-align:center;border:1.5px solid var(--blush);}
-.fsn{font-family:'Noto Serif TC',serif;font-size:1.08rem;font-weight:700;color:var(--deep);display:block;}
-.fsl{font-size:.62rem;color:var(--soft);}
-.fcard{background:var(--card);border:1.5px solid var(--blush);border-radius:16px;padding:1rem 1.1rem;box-shadow:0 4px 20px var(--shadow);}
-.fcats{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.72rem;}
-.fcat{padding:.26rem .68rem;border-radius:100px;border:1.5px solid var(--blush);background:white;font-size:.72rem;color:var(--soft);cursor:pointer;transition:all .2s;}
-.fcat.active{background:var(--rose);border-color:var(--rose);color:white;}
-.frows{display:flex;flex-direction:column;gap:.35rem;}
-.frow{display:flex;align-items:center;gap:.5rem;padding:.44rem .55rem;border-radius:10px;border:1.5px solid transparent;transition:background .2s;}
-.frow:hover{background:var(--warm);}
-.fname{flex:1;font-size:.82rem;color:var(--text);}
-.qw{display:flex;align-items:center;gap:.28rem;}
-.qb{width:21px;height:21px;border-radius:50%;border:1.5px solid var(--blush);background:white;color:var(--deep);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
-.qb:hover{background:var(--rose);border-color:var(--rose);color:white;}
-.qv{min-width:1.5rem;text-align:center;font-size:.8rem;font-weight:600;color:var(--deep);}
-.sb{font-size:.62rem;padding:.08rem .38rem;border-radius:100px;font-weight:500;flex-shrink:0;}
-.sok{background:#e8f5e9;color:#2e7d32;} .slow{background:#fff8e1;color:#e65100;} .sout{background:#fce4ec;color:#b71c1c;}
-.fadd{display:flex;gap:.35rem;margin-top:.8rem;padding-top:.8rem;border-top:1.5px dashed var(--blush);flex-wrap:wrap;}
-.fadd input,.fadd select{flex:1;min-width:58px;padding:.4rem .55rem;border:1.5px solid var(--blush);border-radius:9px;font-family:'Noto Sans TC',sans-serif;font-size:.76rem;color:var(--text);background:white;outline:none;}
-.fadd input:focus,.fadd select:focus{border-color:var(--rose);}
-.fabtn{padding:.4rem .78rem;border-radius:9px;border:none;background:var(--rose);color:white;font-size:.76rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;}
-.fabtn:hover{background:var(--deep);}
-.femp{text-align:center;font-size:.78rem;color:var(--soft);opacity:.65;padding:.9rem 0;}
-
-/* TOAST */
-.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);
-  background:var(--deep);color:white;padding:.68rem 1.3rem;border-radius:100px;font-size:.8rem;
-  font-weight:500;box-shadow:0 4px 20px rgba(192,90,58,.4);
-  transition:transform .35s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none;white-space:nowrap;}
-.toast.show{transform:translateX(-50%) translateY(0);}
+.cal-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.cal-row:last-child{border-bottom:none}
+.cal-badge{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:500;flex-shrink:0}
+.cal-info{flex:1;min-width:0}
+.cal-name{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.cal-amt{font-family:var(--mono);font-size:12px;white-space:nowrap}
+/* TRADE */
+.trade-row{padding:8px 0;border-bottom:1px solid var(--border)}
+.trade-row:last-child{border-bottom:none}
+.trade-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.trade-name{font-size:13px;font-weight:500}
+.trade-sub{font-size:11px;color:var(--text2)}
+/* TAG */
+.tag{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:500;margin-left:3px}
+.t-red{background:rgba(192,57,43,.1);color:var(--red)}
+.t-yellow{background:rgba(154,104,0,.1);color:var(--yellow)}
+.t-green{background:rgba(30,126,74,.1);color:var(--green)}
+.t-blue{background:rgba(26,111,191,.1);color:var(--blue)}
+.t-gray{background:var(--bg3);color:var(--text2)}
+/* BUTTONS */
+.btn{border:none;border-radius:7px;font-family:var(--sans);font-weight:500;cursor:pointer;transition:all .12s}
+.btn-primary{background:#c0392b;color:#fff;padding:11px;width:100%;font-size:13px}
+.btn-primary:hover{opacity:.87}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border2);padding:11px;width:100%;font-size:13px}
+.btn-secondary:hover{background:#dddcda}
+.btn-danger{background:rgba(192,57,43,.08);color:var(--red);border:1px solid rgba(192,57,43,.18);padding:11px;width:100%;font-size:13px}
+.btn-xs{padding:4px 8px;font-size:11px;background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+.btn-xs:hover{background:#dddcda}
+.btn-pay{padding:4px 10px;font-size:11px;background:rgba(30,126,74,.1);color:var(--green);border:1px solid rgba(30,126,74,.2);border-radius:6px;white-space:nowrap}
+.btn-pay:hover{background:rgba(30,126,74,.18)}
+.btn-edit{padding:4px 8px;font-size:11px;background:rgba(26,111,191,.08);color:var(--blue);border:1px solid rgba(26,111,191,.18);border-radius:6px}
+.btn-edit:hover{background:rgba(26,111,191,.15)}
+.btn-del{padding:4px 8px;font-size:11px;background:rgba(192,57,43,.07);color:var(--red);border:1px solid rgba(192,57,43,.15);border-radius:6px}
+.btn-del:hover{background:rgba(192,57,43,.14)}
+/* FORM */
+.fg{margin-bottom:10px}
+.fl{font-size:11px;color:var(--text2);margin-bottom:5px;display:block}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:9px 11px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .12s}
+.fi:focus{border-color:var(--blue);background:#fff}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+select.fi{appearance:none}
+.inc-type-btn{padding:7px 4px;font-size:12px;font-family:var(--sans);border:1px solid var(--border2);border-radius:7px;background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .12s;font-weight:400}
+.inc-type-btn:hover{background:#dddcda}
+.inc-type-btn.active{background:rgba(30,126,74,.12);color:var(--green);border-color:rgba(30,126,74,.3);font-weight:500}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px 14px 0 0;padding:18px 14px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto}
+.modal-title{font-size:14px;font-weight:500;margin-bottom:14px}
+.modal-close{float:right;background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;line-height:1}
+/* CONFIRM */
+.cfm{background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.18);border-radius:7px;padding:10px;margin-top:6px;display:none}
+.cfm.show{display:block}
+.cfm-msg{font-size:12px;color:var(--red);margin-bottom:8px}
+.cfm-btns{display:flex;gap:6px}
+/* INCOME DISPLAY */
+.inc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.inc-card{background:var(--bg3);border-radius:8px;padding:10px 12px}
+.inc-lbl{font-size:10px;color:var(--text3);margin-bottom:3px}
+.inc-val{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--green)}
+/* MOTTO */
+.motto{text-align:center;padding:12px 0 6px;font-size:11px;color:var(--text3);letter-spacing:.15em}
+/* NTFY STATUS */
+.ntfy-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.ntfy-ok{background:var(--green)}.ntfy-err{background:var(--red)}.ntfy-idle{background:var(--text3)}
+.empty{text-align:center;padding:28px 16px;color:var(--text3);font-size:12px}
+/* RECEIPT LOG */
+.pay-log{font-size:11px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)}
+.pay-log:last-child{border-bottom:none}
+.drag-handle{cursor:grab;color:var(--text3);padding:0 4px;font-size:14px;user-select:none;flex-shrink:0}
+.drag-handle:active{cursor:grabbing}
+.debt-item-wrap{transition:opacity .15s}
+.debt-item-wrap.dragging{opacity:.4}
 </style>
 </head>
 <body>
-<header>
-  <span class="ef">🍱</span>
-  <h1>寶寶點餐單</h1>
-</header>
-
-<div class="tab-nav">
-  <button class="tb active" id="tab-cal" onclick="switchTab('cal')">📅 點餐月曆</button>
-  <button class="tb" id="tab-fridge" onclick="switchTab('fridge')">❄️ 冰箱庫存</button>
-  <button class="tb" id="tab-supply" onclick="switchTab('supply')">🛒 家裡庫存</button>
-  <button class="tb" id="tab-beauty" onclick="switchTab('beauty')">💄 化妝品</button>
-</div>
-
-<div class="container">
-
-  <!-- 月曆 TAB -->
-  <div class="tp active" id="tp-cal">
-
-    <!-- 今日/明日速覽 -->
-    <div class="banner">
-      <div class="bn-row">
-        <div class="bn-label">🌙 今日晚餐</div>
-        <div class="bn-content" id="bn-din"><span class="bn-empty">尚未點晚餐</span></div>
-      </div>
-      <div class="bn-divider"></div>
-      <div class="bn-row">
-        <div class="bn-label">☀️ 今日午餐</div>
-        <div class="bn-content" id="bn-lun"><span class="bn-empty">尚未點明天午餐</span></div>
-      </div>
-    </div>
-
-    <!-- 月曆導航 -->
-    <div class="cal-nav">
-      <button onclick="chM(-1)">‹</button>
-      <div class="cal-month" id="calLabel"></div>
-      <button onclick="chM(1)">›</button>
-    </div>
-
-    <!-- 大月曆 -->
-    <div class="cal-wrap">
-      <div class="cwds">
-        <div class="cwd">日</div><div class="cwd">一</div><div class="cwd">二</div>
-        <div class="cwd">三</div><div class="cwd">四</div><div class="cwd">五</div><div class="cwd">六</div>
-      </div>
-      <div class="cdays" id="cdays"></div>
-    </div>
-
-    <!-- 日期詳情 -->
-    <div class="detail" id="detail-box">
-      <div class="dhead">
-        <div class="dhead-t" id="dtitle">📅 今日點餐</div>
-        <button class="add-btn" onclick="openForm()">＋ 新增點餐</button>
-      </div>
-      <div id="drecs"><div class="norec">載入中…</div></div>
-    </div>
-
-    <!-- 點餐表單 -->
-    <div class="oform" id="oform" style="display:none">
-      <div class="fhead">
-        <div class="ftitle" id="ftitle">📝 新增點餐</div>
-        <button class="clo" onclick="closeForm()">✕</button>
-      </div>
-      <!-- 日期選擇 -->
-      <div style="margin-bottom:.7rem">
-        <label style="font-size:.75rem;color:var(--soft);display:block;margin-bottom:.3rem">📅 用餐日期</label>
-        <input type="date" id="order-date" class="oi" style="width:100%">
-      </div>
-      <div class="trow">
-        <button class="tob active" id="mt-d" onclick="setMT('晚餐',this)">🌙 晚餐</button>
-        <button class="tob" id="mt-l" onclick="setMT('午餐',this)">☀️ 午餐</button>
-      </div>
-      <div class="trow">
-        <button class="tob active" id="sw-o" onclick="setMode('outside',this)">🥡 吃外面</button>
-        <button class="tob" id="sw-h" onclick="setMode('homemade',this)">👨‍🍳 寶寶煮</button>
-      </div>
-      <div class="fp active" id="fp-out">
-        <div class="rg">
-          <label class="ri" onclick="selR(this)"><input type="radio" name="out" value="泡菜炒飯"><div class="rdot"></div><span class="rl">🍳 泡菜炒飯</span></label>
-          <label class="ri" onclick="selR(this)"><input type="radio" name="out" value="好吃炒板條"><div class="rdot"></div><span class="rl">🍜 好吃炒板條</span></label>
-          <label class="ri" onclick="selR(this)"><input type="radio" name="out" value="__other__"><div class="rdot"></div><span class="rl">✏️ 其他</span></label>
-        </div>
-        <input class="oi" id="out-oth" placeholder="想吃什麼呢？✨" style="display:none">
-        <div class="history-wrap" id="history-wrap">
-          <div class="history-label">🕐 點過的：</div>
-          <div class="history-chips" id="history-chips"></div>
-        </div>
-      </div>
-      <div class="fp" id="fp-home">
-        <div class="sub">🌾 主食</div>
-        <div class="cg" id="cg-main">
-          <label class="ci"><input type="checkbox" value="地瓜"><span class="chip">🍠 地瓜</span></label>
-          <label class="ci"><input type="checkbox" value="馬鈴薯"><span class="chip">🥔 馬鈴薯</span></label>
-          <label class="ci"><input type="checkbox" value="白飯"><span class="chip">🍚 白飯</span></label>
-          <label class="ci"><input type="checkbox" value="紫米"><span class="chip">🍚 紫米</span></label>
-          <label class="ci"><input type="checkbox" value="南瓜"><span class="chip">🎃 南瓜</span></label>
-          <label class="ci"><input type="checkbox" value="年糕"><span class="chip">🍡 年糕</span></label>
-        </div>
-        <div class="sub">🥩 配菜</div>
-        <div class="cg" id="cg-side">
-          <label class="ci"><input type="checkbox" value="高麗菜滷肉"><span class="chip">🥬 高麗菜滷肉</span></label>
-          <label class="ci"><input type="checkbox" value="空心菜滷肉"><span class="chip">🌿 空心菜滷肉</span></label>
-          <label class="ci"><input type="checkbox" value="牛排"><span class="chip">🥩 牛排</span></label>
-          <label class="ci"><input type="checkbox" value="水煮蛋"><span class="chip">🥚 水煮蛋</span></label>
-          <label class="ci"><input type="checkbox" value="荷包蛋"><span class="chip">🍳 荷包蛋</span></label>
-          <label class="ci"><input type="checkbox" value="純滷肉飯"><span class="chip">🍖 純滷肉飯</span></label>
-          <label class="ci"><input type="checkbox" value="鮭魚"><span class="chip">🐟 鮭魚</span></label>
-          <label class="ci"><input type="checkbox" value="節瓜"><span class="chip">🥒 節瓜</span></label>
-          <label class="ci"><input type="checkbox" value="紅蘿蔔雜燴"><span class="chip">🥕 紅蘿蔔雜燴</span></label>
-        </div>
-        <div class="sub">🌶️ 小菜</div>
-        <div class="cg" id="cg-snack">
-          <label class="ci"><input type="checkbox" value="東泉醬"><span class="chip">🌶️ 東泉醬</span></label>
-          <label class="ci"><input type="checkbox" value="肉鬆"><span class="chip">🧂 肉鬆</span></label>
-        </div>
-        <input class="oi" id="home-oth" placeholder="還想加什麼？">
-      </div>
-      <button class="savebtn" onclick="saveOrder()">💾 儲存點餐</button>
-    </div>
-
-  </div>
-
-  <!-- 冰箱 TAB -->
-  <div class="tp" id="tp-fridge">
-    <div class="fhdr">
-      <div class="ftit">❄️ 冰箱庫存</div>
-      <div class="fupd" id="fupd"></div>
-    </div>
-    <div class="fsum" id="fsum"></div>
-    <div class="fcard">
-      <div class="fcats" id="fcats"></div>
-      <div class="frows" id="frows"></div>
-      <div class="fadd">
-        <select id="fncat">
-          <option value="蔬菜">🥦 蔬菜</option><option value="肉類">🥩 肉類</option>
-          <option value="水果">🍎 水果</option><option value="主食">🍚 主食</option>
-          <option value="蛋奶">🥚 蛋奶</option><option value="調味料">🧂 調味料</option>
-          <option value="其他">📦 其他</option>
-        </select>
-        <input type="text" id="fnname" placeholder="食材名稱">
-        <input type="number" id="fnqty" placeholder="數量" min="0" style="max-width:58px">
-        <input type="text" id="fnunit" placeholder="單位" style="max-width:48px">
-        <button class="fabtn" onclick="addFridge()">＋</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 家裡庫存 TAB -->
-  <div class="tp" id="tp-supply">
-    <div class="fhdr">
-      <div class="ftit">🛒 家裡庫存清單</div>
-      <button class="shop-mode-btn" id="shop-mode-btn" onclick="toggleShopMode()">🛍️ 購物清單模式</button>
-    </div>
-    <!-- 購物清單模式提示 -->
-    <div class="shop-banner" id="shop-banner" style="display:none">
-      <span>🛍️ 購物清單模式 — 以下是需要購買的品項</span>
-    </div>
-    <!-- 統計 -->
-    <div class="fsum" id="ssum"></div>
-    <div class="fcard">
-      <div class="fcats" id="scats"></div>
-      <div class="frows" id="srows"></div>
-      <!-- 新增品項 -->
-      <div class="fadd" id="sadd-row">
-        <select id="sncat">
-          <option value="盥洗用品">🪥 盥洗用品</option>
-          <option value="清潔用品">🧹 清潔用品</option>
-          <option value="日常用品">🧻 日常用品</option>
-          <option value="廚房">🍳 廚房</option>
-          <option value="阿咪">🐱 阿咪</option>
-          <option value="其他">📦 其他</option>
-        </select>
-        <input type="text" id="snname" placeholder="品名">
-        <input type="text" id="snnote" placeholder="備註（選填）" style="min-width:80px">
-        <button class="fabtn" onclick="addSupply()">＋</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- 化妝品 TAB -->
-  <div class="tp" id="tp-beauty">
-    <div class="fhdr">
-      <div class="ftit">💄 化妝品備品</div>
-      <div class="fupd" id="bupd"></div>
-    </div>
-    <div class="fsum" id="bsum"></div>
-    <div class="fcard">
-      <div class="fcats" id="bcats"></div>
-      <div class="frows" id="brows"></div>
-      <div class="fadd">
-        <select id="bncat">
-          <option value="底妝">💄 底妝</option>
-          <option value="眼妝">👁️ 眼妝</option>
-          <option value="唇妝">💋 唇妝</option>
-          <option value="保養">🧴 保養</option>
-          <option value="卸妝">🧹 卸妝</option>
-          <option value="其他">📦 其他</option>
-        </select>
-        <input type="text" id="bnname" placeholder="品名">
-        <input type="text" id="bnnote" placeholder="備註（選填）" style="min-width:70px">
-        <button class="fabtn" onclick="addBeauty()">＋</button>
-      </div>
-    </div>
-  </div>
-
-<!-- 備品動作 Modal -->
-<div class="qty-modal-overlay" id="qty-modal" style="display:none" onclick="closeQtyModal(event)">
-  <div class="qty-modal">
-    <div class="qty-modal-title" id="qm-title">洗髮精</div>
-    <div class="qty-modal-sub">請選擇要執行的動作</div>
-    <!-- 補充好了按鈕 -->
-    <button class="qm-refill" onclick="doRefill()" style="width:100%;padding:.7rem;border-radius:12px;border:none;background:#2e7d32;color:white;font-size:.95rem;font-weight:700;cursor:pointer;margin-bottom:.75rem;">✅ 補充好了</button>
-    <!-- 快沒了區塊 -->
-    <div style="border:1.5px solid var(--blush);border-radius:12px;padding:.85rem;">
-      <div style="font-size:.8rem;font-weight:600;color:#e65100;margin-bottom:.5rem;">⚠️ 快沒了，還剩多少？</div>
-      <input type="text" id="qm-input" placeholder="例：2包、半瓶、1罐" style="width:100%;padding:.55rem .75rem;border:1.5px solid var(--blush);border-radius:10px;font-size:.9rem;margin-bottom:.55rem;outline:none;font-family:'Noto Sans TC',sans-serif;">
-      <button class="qm-confirm" onclick="confirmQtyModal()" style="width:100%;padding:.6rem;border-radius:10px;border:none;background:#e65100;color:white;font-size:.88rem;font-weight:600;cursor:pointer;">⚠️ 標記快沒並通知</button>
-    </div>
-    <button class="qm-cancel" onclick="closeQtyModal()" style="width:100%;padding:.55rem;border-radius:10px;border:1.5px solid var(--blush);background:white;color:var(--soft);font-size:.82rem;cursor:pointer;margin-top:.6rem;">取消</button>
+<!-- 初始設定（只有第一次） -->
+<div id="cfg-screen" style="display:none;position:fixed;inset:0;background:#f2f1ef;z-index:1000;flex-direction:column;align-items:center;justify-content:center;padding:24px">
+  <div style="font-size:24px;margin-bottom:8px">⚙️</div>
+  <div style="font-size:15px;font-weight:500;margin-bottom:4px">初次設定</div>
+  <div style="font-size:11px;color:#aaa;margin-bottom:24px;text-align:center;line-height:1.6">只需設定一次，資料存在本機</div>
+  <div style="width:260px">
+    <div style="font-size:11px;color:#888;margin-bottom:4px">Gist ID</div>
+    <input id="cfg-gist-id" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,0.15);border-radius:8px;font-size:13px;outline:none;background:#fff;margin-bottom:10px;font-family:monospace" placeholder="626f23a0...">
+    <div style="font-size:11px;color:#888;margin-bottom:4px">GitHub Token</div>
+    <input id="cfg-token" type="password" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,0.15);border-radius:8px;font-size:13px;outline:none;background:#fff;margin-bottom:16px;font-family:monospace" placeholder="ghp_...">
+    <button onclick="saveCfg()" style="width:100%;padding:11px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:var(--sans)">儲存並繼續</button>
   </div>
 </div>
 
+<!-- 密碼保護 -->
+<div id="lock-screen" style="display:flex;position:fixed;inset:0;background:#f2f1ef;z-index:999;flex-direction:column;align-items:center;justify-content:center;padding:24px">
+  <div style="font-size:28px;margin-bottom:8px">🔒</div>
+  <div style="font-size:16px;font-weight:500;margin-bottom:4px">理債手冊</div>
+  <div style="font-size:12px;color:#aaa;margin-bottom:24px;letter-spacing:.1em">面對．接受．處理．放下</div>
+  <input id="pw-input" type="password" placeholder="輸入密碼" style="width:200px;padding:12px 16px;border:1px solid rgba(0,0,0,0.15);border-radius:10px;font-size:15px;text-align:center;outline:none;background:#fff;font-family:var(--mono)" onkeydown="if(event.key==='Enter')checkPw()">
+  <button onclick="checkPw()" style="margin-top:10px;width:200px;padding:11px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:var(--sans)">進入</button>
+  <div id="pw-error" style="margin-top:8px;font-size:12px;color:#c0392b;display:none">密碼錯誤</div>
 </div>
-<div class="toast" id="toast"></div>
 
-<!-- 不用 type=module，改成普通 script，避免作用域問題 -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<!-- 同步狀態列 -->
+<div id="sync-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(244,244,242,0.95);border-top:1px solid rgba(0,0,0,0.08);padding:6px 16px;font-size:11px;color:#888;display:flex;align-items:center;gap:6px;z-index:50;max-width:420px;margin:0 auto">
+  <span id="sync-dot" style="width:6px;height:6px;border-radius:50%;background:#aaa;flex-shrink:0"></span>
+  <span id="sync-msg">就緒</span>
+  <button onclick="manualSync()" style="margin-left:auto;background:none;border:none;font-size:11px;color:#aaa;cursor:pointer;font-family:var(--sans)">立即同步</button>
+</div>
+
+<nav class="nav">
+  <span class="nav-title">理債手冊</span>
+  <button class="nav-tab active" onclick="showPage('overview',this)">總覽</button>
+  <button class="nav-tab" onclick="showPage('income',this)">收入</button>
+  <button class="nav-tab" onclick="showPage('debts',this)">負債</button>
+  <button class="nav-tab" onclick="showPage('calendar',this)">行事曆</button>
+  <button class="nav-tab" onclick="showPage('trades',this)">操盤</button>
+  <button class="nav-tab" onclick="showPage('settings',this)">設定</button>
+</nav>
+
+<!-- 總覽 -->
+<div class="page active" id="page-overview">
+  <div class="motto">面對．接受．處理．放下</div>
+  <div class="metrics" id="ov-metrics"></div>
+  <div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase">本月待繳</span><span style="font-size:10px;color:var(--text3)">點選打勾已繳</span></div><div id="ov-alerts"></div></div>
+  <div class="card"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">本月收支</div><div id="ov-cashflow"></div></div>
+  <div class="card"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">還款進度</div><div id="ov-progress"></div></div>
+</div>
+
+<!-- 收入 -->
+<div class="page" id="page-income">
+  <div class="metrics" style="grid-template-columns:1fr 1fr;margin-top:4px">
+    <div class="metric"><div class="metric-lbl">本月收入合計</div><div class="metric-val green" id="inc-page-total">$0</div></div>
+    <div class="metric"><div class="metric-lbl">本月結餘</div><div class="metric-val" id="inc-page-balance">$0</div></div>
+  </div>
+  <div class="sec-hdr">
+    <span class="sec-lbl">新增收入</span>
+  </div>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px" id="inc-type-btns">
+      <button class="inc-type-btn active" data-type="9號薪資" onclick="selectIncType(this)">9號薪資</button>
+      <button class="inc-type-btn" data-type="24號薪資" onclick="selectIncType(this)">24號薪資</button>
+      <button class="inc-type-btn" data-type="年終獎金" onclick="selectIncType(this)">年終獎金</button>
+      <button class="inc-type-btn" data-type="三節獎金" onclick="selectIncType(this)">三節獎金</button>
+      <button class="inc-type-btn" data-type="其他獎金" onclick="selectIncType(this)">其他獎金</button>
+      <button class="inc-type-btn" data-type="__custom__" onclick="selectIncType(this)">自填項目</button>
+    </div>
+    <div class="fg" id="inc-custom-name-grp" style="display:none">
+      <label class="fl">自訂名稱</label>
+      <input class="fi" id="inc-custom-name" placeholder="如：股票股利">
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">金額</label><input class="fi" type="number" id="inc-amount" placeholder="0"></div>
+      <div class="fg"><label class="fl">日期</label><input class="fi" type="date" id="inc-date"></div>
+    </div>
+    <button class="btn btn-primary" style="background:var(--green)" onclick="addIncome()">新增收入</button>
+  </div>
+  <div class="sec-hdr"><span class="sec-lbl">收入紀錄</span></div>
+  <div class="card"><div id="inc-log-list"><div class="empty">尚無收入紀錄</div></div></div>
+</div>
+
+<!-- 負債 -->
+<div class="page" id="page-debts">
+  <div class="sec-hdr" style="margin-top:4px">
+    <span class="sec-lbl">負債清單</span>
+    <button class="btn btn-xs" id="btn-add-debt">＋ 新增</button>
+  </div>
+  <div id="debts-list"></div>
+  <div class="sec-hdr"><span class="sec-lbl">應收款項</span><button class="btn btn-xs" onclick="openModal('modal-receivable')">＋ 新增</button></div>
+  <div id="receivables-list"></div>
+  <div class="sec-hdr"><span class="sec-lbl">還款紀錄</span></div>
+  <div class="card"><div id="pay-log-list"><div class="empty">尚無還款紀錄</div></div></div>
+</div>
+
+<!-- 行事曆 -->
+<div class="page" id="page-calendar">
+  <div class="card" style="margin-top:4px"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">本月還款＆固定支出</div><div id="cal-monthly"></div></div>
+  <div class="sec-hdr">
+    <span class="sec-lbl">每月固定項目</span>
+    <button class="btn btn-xs" onclick="openModal('modal-fixed')">＋ 新增</button>
+  </div>
+  <div class="card"><div id="cal-fixed"></div></div>
+  <div class="sec-hdr"><span class="sec-lbl">大額支出</span><button class="btn btn-xs" onclick="openModal('modal-onetime')">＋ 新增</button></div>
+  <div class="card"><div id="cal-onetime"></div></div>
+</div>
+
+<!-- 操盤 -->
+<div class="page" id="page-trades">
+  <div class="sec-hdr" style="margin-top:4px"><span class="sec-lbl">累計損益</span><button class="btn btn-xs" onclick="openModal('modal-trade')">＋ 新增</button></div>
+  <div class="metrics" id="tr-metrics"></div>
+  <div class="card"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">當沖違規</div><div id="tr-violations"></div></div>
+  <div class="card" style="margin-top:8px"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">交易明細</div><div id="tr-list"></div></div>
+</div>
+
+<!-- 設定 -->
+<div class="page" id="page-settings">
+  <div class="card" style="margin-top:4px">
+    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px">收入</div>
+    <div style="font-size:12px;color:var(--text2);padding:8px 0">收入紀錄已移至頂部「收入」頁面管理。</div>
+  </div>
+  <div class="card">
+    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">通知設定（ntfy）</div>
+    <div class="fg"><label class="fl">ntfy Topic 名稱</label><input class="fi" id="ntfy-topic" placeholder="shen-debt-20260501-start"></div>
+    <div class="fg"><label class="fl">提前幾天通知</label>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" id="ntfy-7d" checked> 7天前</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" id="ntfy-3d" checked> 3天前</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" id="ntfy-1d"> 1天前</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn btn-secondary" style="flex:1;padding:9px;font-size:12px" onclick="saveNtfySettings()">儲存設定</button>
+      <button class="btn btn-secondary" style="flex:1;padding:9px;font-size:12px" onclick="testNtfy()">測試通知</button>
+    </div>
+    <div id="ntfy-status" style="font-size:11px;color:var(--text2);display:flex;align-items:center"><span class="ntfy-dot ntfy-idle" id="ntfy-dot"></span><span id="ntfy-msg">尚未測試</span></div>
+  </div>
+  <div class="card">
+    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">自訂負債類型</div>
+    <div id="custom-types-list" style="margin-bottom:8px"></div>
+    <div style="display:flex;gap:6px"><input class="fi" id="new-type-input" placeholder="新類型名稱" style="flex:1"><button class="btn btn-xs" onclick="addCustomType()">新增</button></div>
+  </div>
+  <div class="card">
+    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">資料管理</div>
+    <div style="display:grid;gap:6px">
+      <button class="btn btn-secondary" onclick="exportData()">匯出備份（JSON）</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">匯入備份</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn btn-danger" onclick="showCfm('cfm-clear')">清除所有資料</button>
+      <div class="cfm" id="cfm-clear"><div class="cfm-msg">確定清除所有資料？無法復原。</div><div class="cfm-btns"><button class="btn btn-danger" style="flex:1;padding:8px;font-size:12px" onclick="clearData()">確定</button><button class="btn btn-secondary" style="flex:1;padding:8px;font-size:12px" onclick="hideCfm('cfm-clear')">取消</button></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">操盤紀律</div>
+    <div style="line-height:2.1;color:var(--text2);font-size:13px">
+      <div>① 你是來賺錢，不是來證明自己是對的。</div>
+      <div>② 你的感覺，不值錢。</div>
+      <div>③ 活得久的人，才是贏家。</div>
+      <div style="margin-top:8px;color:var(--red);font-weight:500">✕ 現股嚴禁當沖</div>
+      <div style="color:var(--red);font-weight:500">✕ 賠錢倉位不加碼</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: 新增/編輯負債 -->
+<div class="modal-overlay" id="modal-debt" onclick="closeOut(event,'modal-debt')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-debt')">×</button>
+    <div class="modal-title" id="debt-modal-title">新增負債</div>
+    <input type="hidden" id="d-id">
+    <div class="fg"><label class="fl">名稱</label><input class="fi" id="d-name" placeholder="連線銀行信貸"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">目前餘額</label><input class="fi" type="number" id="d-balance"></div>
+      <div class="fg"><label class="fl">已還總額</label><input class="fi" type="number" id="d-paid" placeholder="0"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">利率（%）</label><input class="fi" type="number" id="d-rate" step="0.01"></div>
+      <div class="fg"><label class="fl">月還款</label><input class="fi" type="number" id="d-monthly"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">還款日（號）</label><input class="fi" type="number" id="d-day" min="1" max="31"></div>
+      <div class="fg"><label class="fl">剩餘期數</label><input class="fi" type="number" id="d-periods"></div>
+    </div>
+    <div class="fg"><label class="fl">類型</label><select class="fi" id="d-type" onchange="onTypeChange()"></select></div>
+    <div class="fg" id="d-deadline-grp" style="display:none"><label class="fl">到期日</label><input class="fi" type="date" id="d-deadline"></div>
+    <button class="btn btn-primary" onclick="saveDebt()">儲存</button>
+  </div>
+</div>
+
+<!-- Modal: 快速還款 -->
+<div class="modal-overlay" id="modal-pay" onclick="closeOut(event,'modal-pay')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-pay')">×</button>
+    <div class="modal-title" id="pay-modal-title">記錄還款</div>
+    <input type="hidden" id="pay-debt-id">
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">快速選擇金額</div>
+      <div id="pay-quick-btns" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+    <div class="fg"><label class="fl">或輸入其他金額</label><input class="fi" type="number" id="pay-amount" placeholder="0"></div>
+    <div class="fg"><label class="fl">備註（選填）</label><input class="fi" id="pay-note" placeholder="如：4月份還款"></div>
+    <button class="btn btn-primary" style="background:var(--green)" onclick="confirmPay()">確認還款</button>
+  </div>
+</div>
+
+<!-- Modal: 應收 -->
+<div class="modal-overlay" id="modal-receivable" onclick="closeOut(event,'modal-receivable')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-receivable')">×</button>
+    <div class="modal-title">新增應收款項</div>
+    <div class="fg"><label class="fl">對象</label><input class="fi" id="r-name" placeholder="寶子"></div>
+    <div class="fg"><label class="fl">金額</label><input class="fi" type="number" id="r-amount"></div>
+    <div class="fg"><label class="fl">備註</label><input class="fi" id="r-note" placeholder="選填"></div>
+    <button class="btn btn-primary" onclick="addReceivable()">新增</button>
+  </div>
+</div>
+
+<!-- Modal: 每月固定支出 -->
+<div class="modal-overlay" id="modal-fixed" onclick="closeOut(event,'modal-fixed')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-fixed')">×</button>
+    <div class="modal-title" id="fe-modal-title">新增每月固定支出</div>
+    <input type="hidden" id="fe-edit-id">
+    <div class="fg"><label class="fl">名稱</label><input class="fi" id="fe-name" placeholder="如：癌症保險"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">每月金額</label><input class="fi" type="number" id="fe-amount" placeholder="470"></div>
+      <div class="fg"><label class="fl">扣款日（號）</label><input class="fi" type="number" id="fe-day" placeholder="15" min="1" max="31"></div>
+    </div>
+    <div class="fg"><label class="fl">備註（選填）</label><input class="fi" id="fe-note" placeholder="如：永豐銀行扣"></div>
+    <button class="btn btn-primary" onclick="saveFixedExpense()">儲存</button>
+  </div>
+</div>
+
+<!-- Modal: 大額支出 -->
+<div class="modal-overlay" id="modal-onetime" onclick="closeOut(event,'modal-onetime')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-onetime')">×</button>
+    <div class="modal-title">新增大額支出</div>
+    <div class="fg"><label class="fl">名稱</label><input class="fi" id="o-name" placeholder="國泰保險"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">金額</label><input class="fi" type="number" id="o-amount"></div>
+      <div class="fg"><label class="fl">日期</label><input class="fi" type="date" id="o-date"></div>
+    </div>
+    <div class="fg"><label class="fl">重複</label><select class="fi" id="o-repeat"><option value="once">單次</option><option value="yearly">每年</option><option value="monthly">每月</option></select></div>
+    <div class="fg"><label class="fl">備註</label><input class="fi" id="o-note" placeholder="選填"></div>
+    <button class="btn btn-primary" onclick="addOnetime()">新增</button>
+  </div>
+</div>
+
+<!-- Modal: 交易 -->
+<div class="modal-overlay" id="modal-trade" onclick="closeOut(event,'modal-trade')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-trade')">×</button>
+    <div class="modal-title">新增交易紀錄</div>
+    <div class="fr">
+      <div class="fg"><label class="fl">日期</label><input class="fi" type="date" id="t-date"></div>
+      <div class="fg"><label class="fl">標的</label><input class="fi" id="t-symbol" placeholder="敬鵬期"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">類型</label><select class="fi" id="t-type"><option value="futures">期貨</option><option value="stock">現股</option><option value="violation">當沖違規</option></select></div>
+      <div class="fg"><label class="fl">口數/張數</label><input class="fi" type="number" id="t-qty"></div>
+    </div>
+    <div class="fg"><label class="fl">損益（虧損填負數）</label><input class="fi" type="number" id="t-pnl"></div>
+    <div class="fg"><label class="fl">備註</label><input class="fi" id="t-note" placeholder="選填"></div>
+    <button class="btn btn-primary" onclick="addTrade()">新增</button>
+  </div>
+</div>
+
 <script>
-// ── Firebase init ──────────────────────────────────
-firebase.initializeApp({
-  apiKey:"AIzaSyCkRVxaM8INj9gy62MEG5ko6nH7t-3uDJw",
-  authDomain:"eatwhat-49d7b.firebaseapp.com",
-  databaseURL:"https://eatwhat-49d7b-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId:"eatwhat-49d7b",
-  storageBucket:"eatwhat-49d7b.firebasestorage.app",
-  messagingSenderId:"625504079548",
-  appId:"1:625504079548:web:918ecdb03230c8112bcab9"
-});
-var db = firebase.database();
+// ── DEFAULT DATA ──────────────────────────────────────────────
+const DEF = {
+  income9:31500, income24:31500, customTypes:[],
+  ntfyTopic:'shen-debt-20260501-start', ntfy7d:true, ntfy3d:true, ntfy1d:false,
+  debts:[
+    {id:1,name:'連線銀行信貸',balance:2185304,paid:0,rate:3.68,monthly:21794,day:20,periods:120,type:'loan',deadline:null},
+    {id:2,name:'台北富邦信貸',balance:431407,paid:0,rate:4.2,monthly:6330,day:21,periods:78,type:'loan',deadline:null},
+    {id:3,name:'永豐信用卡預借現金',balance:20000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null},
+    {id:4,name:'中信信用卡預借現金',balance:17000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null},
+    {id:5,name:'朋友 JY',balance:50000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01'},
+    {id:6,name:'朋友 IVY',balance:30000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01'},
+    {id:7,name:'家人會錢',balance:15600,paid:0,rate:0,monthly:5200,day:20,periods:3,type:'friend',deadline:'2026-07-20'},
+  ],
+  extraIncome:[
+    {id:101,name:'24號薪資',amount:62885,date:'2026-04-24',ts:1745452800000},
+    {id:102,name:'9號薪資',amount:32215,date:'2026-04-09',ts:1744156800000},
+    {id:103,name:'24號薪資',amount:39500,date:'2026-03-24',ts:1742774400000},
+    {id:104,name:'9號薪資',amount:53093,date:'2026-03-07',ts:1741305600000},
+    {id:105,name:'24號薪資',amount:30500,date:'2026-02-24',ts:1740355200000},
+    {id:106,name:'9號薪資',amount:31554,date:'2026-02-07',ts:1738886400000},
+    {id:107,name:'24號薪資',amount:30500,date:'2026-01-24',ts:1737676800000},
+    {id:108,name:'9號薪資',amount:31304,date:'2026-01-09',ts:1736380800000},
+  ],
+  receivables:[{id:1,name:'寶子',amount:200000,note:'借出款項'}],
+  oneTimeExpenses:[
+    {id:1,name:'儲蓄險',amount:60435,date:'2027-01-05',repeat:'yearly',note:'已繳9年'},
+    {id:2,name:'國泰保險',amount:28271,date:'2026-05-11',repeat:'yearly',note:'永豐大戶扣款'},
+  ],
+  fixedExpenses:[{id:2,name:'癌症保險',amount:470}],
+  trades:[
+    {id:1,date:'2026-04-07',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-20192,note:'當沖違規 #1'},
+    {id:2,date:'2026-04-07',symbol:'敬鵬期貨',type:'futures',qty:8,pnl:-44672,note:'減碼8口'},
+    {id:3,date:'2026-04-08',symbol:'敬鵬期+小台',type:'futures',qty:15,pnl:-33670,note:'減碼12口+小台獲利'},
+    {id:4,date:'2026-04-09',symbol:'金像現股',type:'violation',qty:40,pnl:-119148,note:'當沖違規 #2'},
+    {id:5,date:'2026-04-09',symbol:'期貨綜合',type:'futures',qty:52,pnl:79898,note:'小台25口+微台19口+敬鵬8口（稅後）'},
+    {id:6,date:'2026-04-10',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-4342,note:'當沖違規 #3'},
+    {id:7,date:'2026-04-10',symbol:'期貨綜合',type:'futures',qty:12,pnl:-68470,note:'南亞+敬鵬+小台（稅後）'},
+    {id:8,date:'2026-04-13',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-60251,note:'當沖違規 #4'},
+    {id:9,date:'2026-04-14',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-100140,note:'當沖違規 #5'},
+    {id:10,date:'2026-04-14',symbol:'台指期',type:'futures',qty:1,pnl:14028,note:'台指期獲利'},
+    {id:11,date:'2026-04-14',symbol:'敬鵬期貨',type:'futures',qty:12,pnl:-114320,note:'12口全數出清，均價50.9'},
+  ],
+  payLogs:[], nextId:200
+};
 
-// ── State ──────────────────────────────────────────
-var NOW    = new Date();
-var TODAY  = fd(NOW);
-var TOMORROW = addD(TODAY,1);
-var vy = NOW.getFullYear(), vm = NOW.getMonth();
-var selDate = TODAY;
-var mt = '晚餐', mode = 'outside', fcat = 'all';
-var allR = {}, fridgeD = {};
-var CAT = {'蔬菜':'🥦','肉類':'🥩','水果':'🍎','主食':'🍚','蛋奶':'🥚','調味料':'🧂','其他':'📦'};
+// ── GIST SYNC ────────────────────────────────────────────────
+let D = JSON.parse(JSON.stringify(DEF));
+let syncTimer = null;
+let lastSyncEtag = null;
 
-function fd(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
-function p2(n){return String(n).padStart(2,'0');}
-function addD(s,n){var d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return fd(d);}
-function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
-
-// ── Tab ────────────────────────────────────────────
-function switchTab(tab){
-  ['cal','fridge','supply','beauty'].forEach(function(t){
-    document.getElementById('tp-'+t).classList.toggle('active',t===tab);
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
-  });
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  const msgEl = document.getElementById('sync-msg');
+  if(!dot || !msgEl) return;
+  const colors = {ok:'#1e7e4a', err:'#c0392b', syncing:'#9a6800', idle:'#aaa'};
+  dot.style.background = colors[state] || '#aaa';
+  msgEl.textContent = msg;
 }
 
-// ── Calendar ───────────────────────────────────────
-function chM(d){
-  vm+=d;
-  if(vm>11){vm=0;vy++;}
-  if(vm<0){vm=11;vy--;}
-  renderCal();
-}
-
-function renderCal(){
-  document.getElementById('calLabel').textContent=vy+' 年 '+(vm+1)+' 月';
-  var f=new Date(vy,vm,1).getDay();
-  var dim=new Date(vy,vm+1,0).getDate();
-  var dip=new Date(vy,vm,0).getDate();
-  var tot=f+dim; tot=tot%7===0?tot:tot+(7-tot%7);
-  var h='';
-  for(var i=0;i<tot;i++){
-    var d,mo=vm,yr=vy,oth=false;
-    if(i<f){d=dip-f+i+1;mo=vm-1;if(mo<0){mo=11;yr--;}oth=true;}
-    else if(i>=f+dim){d=i-f-dim+1;mo=vm+1;if(mo>11){mo=0;yr++;}oth=true;}
-    else{d=i-f+1;}
-    var ds=yr+'-'+p2(mo+1)+'-'+p2(d);
-    var isT=ds===TODAY, isSel=ds===selDate;
-    var cls='cday'+(oth?' other':'')+(isT?' today':'')+(isSel?' sel':'');
-
-    // find meals for this day
-    var dins=Object.values(allR).filter(function(r){return r.date===ds&&r.meal==='晚餐';});
-    var luns=Object.values(allR).filter(function(r){return r.date===ds&&r.meal==='午餐';});
-
-    var dinSlot = dins.length
-      ? '<div class="slot slot-din'+(dins[0].ready?' done-slot':'')+'">🌙'+sh(dins[0])+'</div>'
-      : '<div class="slot-empty">晚餐</div>';
-    var lunSlot = luns.length
-      ? '<div class="slot slot-lun'+(luns[0].ready?' done-slot':'')+'">☀️'+sh(luns[0])+'</div>'
-      : '<div class="slot-empty">午餐</div>';
-
-    h+='<div class="'+cls+'" onclick="selDay(\''+ds+'\')">'
-      +'<div class="dn-wrap"><div class="dn">'+d+'</div></div>'
-      +dinSlot+lunSlot
-      +'</div>';
+async function loadFromGist() {
+  try {
+    setSyncStatus('syncing', '載入中...');
+    const resp = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      headers: { 'Authorization': `token ${GIST_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (!resp.ok) throw new Error('載入失敗');
+    const gist = await resp.json();
+    const content = gist.files[GIST_FILE]?.content;
+    if (!content) throw new Error('檔案不存在');
+    const parsed = JSON.parse(content);
+    // migrate
+    if (!parsed.paidItems) parsed.paidItems = {};
+    if (!parsed.customTypes) parsed.customTypes = [];
+    if (!parsed.extraIncome) parsed.extraIncome = [];
+    if (!parsed.payLogs) parsed.payLogs = [];
+    parsed.debts.forEach(d => { if (d.paid === undefined) d.paid = 0; });
+    D = parsed;
+    localStorage.setItem('debt-v3', JSON.stringify(D));
+    setSyncStatus('ok', '已同步 ' + new Date().toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'}));
+    return true;
+  } catch(e) {
+    // fallback to localStorage
+    const local = localStorage.getItem('debt-v3');
+    if (local) { try { D = JSON.parse(local); } catch{} }
+    setSyncStatus('err', '雲端載入失敗，使用本機資料');
+    return false;
   }
-  document.getElementById('cdays').innerHTML=h;
-  renderBanner();
 }
 
-function sh(r){
-  if(!r||!r.content)return'';
-  if(r.content.type==='outside')return r.content.food||'';
-  var p=[];
-  if(r.content.main&&r.content.main.length)p.push(r.content.main[0]);
-  if(r.content.side&&r.content.side.length)p.push(r.content.side[0]);
-  return p.join('+')||'自煮';
+async function saveToGist() {
+  try {
+    setSyncStatus('syncing', '儲存中...');
+    localStorage.setItem('debt-v3', JSON.stringify(D));
+    const resp = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `token ${GIST_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(D, null, 2) } } })
+    });
+    if (!resp.ok) throw new Error('儲存失敗');
+    setSyncStatus('ok', '已儲存 ' + new Date().toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'}));
+  } catch(e) {
+    setSyncStatus('err', '雲端儲存失敗，已存本機');
+  }
 }
 
-// ── Banner ─────────────────────────────────────────
-function renderBanner(){
-  var de=Object.entries(allR).filter(function(e){return e[1].date===TODAY&&e[1].meal==='晚餐';});
-  var le=Object.entries(allR).filter(function(e){return e[1].date===TODAY&&e[1].meal==='午餐';});
-  var dinEl=document.getElementById('bn-din');
-  var lunEl=document.getElementById('bn-lun');
-  dinEl.innerHTML=de.length?bnItems(de):'<span class="bn-empty">尚未點晚餐</span>';
-  lunEl.innerHTML=le.length?bnItems(le):'<span class="bn-empty">尚未點今日午餐</span>';
+function load() {
+  try { const r = localStorage.getItem('debt-v3'); return r ? JSON.parse(r) : JSON.parse(JSON.stringify(DEF)); }
+  catch { return JSON.parse(JSON.stringify(DEF)); }
 }
-function bnItems(es){
-  return es.map(function(e){
-    var k=e[0],r=e[1];
-    return '<div class="bn-item'+(r.ready?' done':'')+'">'+
-      '<div class="bn-food"><span class="rtag '+(r.content&&r.content.type==='outside'?'t-out':'t-hom')+'">'+(r.content&&r.content.type==='outside'?'外面':'自煮')+'</span>'+fc(r.content)+'</div>'+
-      '<button class="rb'+(r.ready?' done':'')+'" onclick="togReady(\''+k+'\','+!!r.ready+')">'+(r.ready?'✓':'○')+'</button>'+
-      '<button class="xb" onclick="delR(\''+k+'\')">✕</button>'+
-      '</div>';
+
+function save() {
+  localStorage.setItem('debt-v3', JSON.stringify(D));
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => saveToGist(), 1500);
+}
+
+async function manualSync() {
+  await loadFromGist();
+  render();
+}
+
+function checkPw() {
+  const val = document.getElementById('pw-input').value;
+  const correctPw = D.password || '${PASSWORD}';
+  if (val === correctPw) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('sync-bar').style.display = 'flex';
+  } else {
+    document.getElementById('pw-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    setTimeout(() => document.getElementById('pw-error').style.display = 'none', 2000);
+  }
+}
+
+// D loaded from gist async, migrate handled in loadFromGist
+// local fallback init
+D = load();
+if(!D.customTypes)D.customTypes=[];
+if(!D.payLogs)D.payLogs=[];
+if(!D.ntfyTopic)D.ntfyTopic='shen-debt-20260501-start';
+if(!D.paidItems)D.paidItems={};
+if(D.ntfy7d===undefined)D.ntfy7d=true;
+if(D.ntfy3d===undefined)D.ntfy3d=true;
+if(D.ntfy1d===undefined)D.ntfy1d=false;
+D.debts.forEach(d=>{if(d.paid===undefined)d.paid=0;});
+
+// ── UTILS ────────────────────────────────────────────────────
+const fmt=n=>(n<0?'-$':'+$')+Math.abs(Math.round(n)).toLocaleString();
+const fmtA=n=>'$'+Math.abs(Math.round(n)).toLocaleString();
+const cc=n=>n>=0?'green':'red';
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+const daysUntil=s=>{const d=new Date(s);d.setHours(0,0,0,0);return Math.ceil((d-today())/86400000);};
+
+// ── TYPES ────────────────────────────────────────────────────
+const BT=[{v:'loan',l:'信貸'},{v:'card',l:'信用卡'},{v:'friend',l:'親友'}];
+function allTypes(){return[...BT,...(D.customTypes||[]).map(t=>({v:'c_'+t,l:t}))];};
+function tLabel(v){const t=allTypes().find(x=>x.v===v);return t?t.l:v;}
+function tCls(v){return v==='loan'?'t-blue':v==='card'?'t-red':v==='friend'?'t-yellow':'t-gray';}
+function tColor(v){return v==='loan'?'#1a6fbf':v==='card'?'#c0392b':v==='friend'?'#9a6800':'#aaa';}
+function fillTypeSelect(id,val){const s=document.getElementById(id);s.innerHTML=allTypes().map(t=>`<option value="${t.v}"${t.v===val?' selected':''}>${t.l}</option>`).join('');}
+function addCustomType(){const v=document.getElementById('new-type-input').value.trim();if(!v||D.customTypes.includes(v))return;D.customTypes.push(v);save();renderSettings();}
+function removeCustomType(t){D.customTypes=D.customTypes.filter(x=>x!==t);save();renderSettings();}
+
+// ── NAV ──────────────────────────────────────────────────────
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  render();
+}
+
+// ── RENDER ALL ───────────────────────────────────────────────
+function render(){renderOverview();renderIncome();renderDebts();renderCalendar();renderTrades();renderSettings();}
+function togglePaid(key){
+  if(!D.paidItems)D.paidItems={};
+  D.paidItems[key]=!D.paidItems[key];
+  save();renderOverview();
+}
+
+// ── INCOME PAGE ──────────────────────────────────────────────
+let selectedIncType='9號薪資';
+function selectIncType(el){
+  document.querySelectorAll('.inc-type-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  selectedIncType=el.dataset.type;
+  document.getElementById('inc-custom-name-grp').style.display=selectedIncType==='__custom__'?'block':'none';
+}
+function addIncome(){
+  const amt=parseFloat(document.getElementById('inc-amount').value)||0;
+  const date=document.getElementById('inc-date').value;
+  if(!amt||!date)return alert('請填寫金額與日期');
+  let name=selectedIncType==='__custom__'?(document.getElementById('inc-custom-name').value.trim()||'其他'):selectedIncType;
+  if(!D.extraIncome)D.extraIncome=[];
+  D.extraIncome.push({id:D.nextId++,name,amount:amt,date,ts:Date.now()});
+  document.getElementById('inc-amount').value='';
+  save();render();
+}
+function removeIncome(id){D.extraIncome=(D.extraIncome||[]).filter(e=>e.id!==id);save();render();}
+function renderIncome(){
+  const all=D.extraIncome||[];
+  const totalInc=all.reduce((s,e)=>s+e.amount,0);
+  const totalOut=(D.debts||[]).filter(d=>d.monthly>0).reduce((s,d)=>s+d.monthly,0)+(D.fixedExpenses||[]).reduce((s,e)=>s+e.amount,0);
+  const bal=totalInc-totalOut;
+  const t=document.getElementById('inc-page-total');
+  const b=document.getElementById('inc-page-balance');
+  if(t)t.textContent='$'+totalInc.toLocaleString();
+  if(b){b.textContent=fmt(bal);b.className='metric-val '+(bal>=0?'green':'red');}
+  const logEl=document.getElementById('inc-log-list');
+  if(!logEl)return;
+  if(!all.length){logEl.innerHTML='<div class="empty">尚無收入紀錄</div>';return;}
+  // group by year-month
+  const groups={};
+  [...all].sort((a,b)=>b.date.localeCompare(a.date)).forEach(e=>{
+    const ym=e.date.slice(0,7);
+    if(!groups[ym])groups[ym]=[];
+    groups[ym].push(e);
+  });
+  logEl.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(ym=>{
+    const monthTotal=groups[ym].reduce((s,e)=>s+e.amount,0);
+    const rows=groups[ym].map(e=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div><span style="font-size:13px;color:var(--text)">${e.name}</span><span style="font-size:11px;color:var(--text3);margin-left:6px">${e.date.slice(5)}</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--mono);font-size:13px;color:var(--green)">+$${Math.round(e.amount).toLocaleString()}</span>
+          <button class="btn-del" style="padding:3px 7px;font-size:11px" onclick="removeIncome(${e.id})">刪</button>
+        </div>
+      </div>`).join('');
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:500">
+        <span>${ym}</span><span>小計 $${monthTotal.toLocaleString()}</span>
+      </div>
+      ${rows}
+    </div>`;
   }).join('');
 }
 
-// ── Detail ─────────────────────────────────────────
-function selDay(ds){
-  selDate=ds;
-  renderCal();
-  renderDetail();
-  document.getElementById('oform').style.display='none';
-}
-
-function renderDetail(){
-  var parts=selDate.split('-');
-  var yr=parts[0],mo=parseInt(parts[1]),dd=parseInt(parts[2]);
-  document.getElementById('dtitle').textContent=yr+'年'+mo+'月'+dd+'日';
-  var recs=Object.entries(allR).filter(function(e){return e[1].date===selDate;})
-    .sort(function(a,b){return(b[1].ts||0)-(a[1].ts||0);});
-  var el=document.getElementById('drecs');
-  if(!recs.length){el.innerHTML='<div class="norec">這天還沒有點餐記錄 🌸</div>';return;}
-  el.innerHTML=recs.map(function(e){
-    var k=e[0],r=e[1];
-    return '<div class="drec'+(r.ready?' done':'')+'">'+
-      '<div class="drec-info">'+
-        '<div class="drec-tags">'+
-          '<span class="rtag-m '+(r.meal==='晚餐'?'t-din':'t-lun')+'">'+(r.meal==='晚餐'?'🌙 晚餐':'☀️ 午餐')+'</span>'+
-          '<span class="rtag '+(r.content&&r.content.type==='outside'?'t-out':'t-hom')+'">'+(r.content&&r.content.type==='outside'?'吃外面':'寶寶煮')+'</span>'+
-          (r.ready?'<span class="rtag t-ok">✓ 已準備</span>':'')+'</div>'+
-        '<div class="drec-content">'+fc(r.content)+'</div>'+
-      '</div>'+
-      '<button class="rb'+(r.ready?' done':'')+'" onclick="togReady(\''+k+'\','+!!r.ready+')">'+(r.ready?'✓':'○')+'</button>'+
-      '<button class="xb" onclick="delR(\''+k+'\')">✕</button>'+
-    '</div>';
-  }).join('');
-}
-
-function fc(c){
-  if(!c)return'';
-  if(c.type==='outside')return c.food||'';
-  var p=[];
-  if(c.main&&c.main.length)p.push('<b>主食：</b>'+c.main.join('、'));
-  if(c.side&&c.side.length)p.push('<b>配菜：</b>'+c.side.join('、'));
-  if(c.snack&&c.snack.length)p.push('<b>小菜：</b>'+c.snack.join('、'));
-  if(c.other)p.push('<b>其他：</b>'+c.other);
-  return p.join('<br>')||'寶寶煮';
-}
-
-function togReady(k,cur){
-  db.ref('records/'+k).update({ready:!cur});
-  toast(!cur?'✓ 準備完成！':'已取消準備狀態');
-}
-function delR(k){
-  db.ref('records/'+k).remove();
-  toast('已刪除');
-}
-
-// ── Form ───────────────────────────────────────────
-function openForm(){
-  var f=document.getElementById('oform');
-  f.style.display='block';
-  f.scrollIntoView({behavior:'smooth',block:'nearest'});
-  // default date = selected date
-  document.getElementById('order-date').value=selDate;
-  setMT('晚餐',document.getElementById('mt-d'));
-  updFTitle();
-}
-function closeForm(){document.getElementById('oform').style.display='none';}
-
-function setMT(type,btn){
-  mt=type;
-  document.querySelectorAll('#mt-d,#mt-l').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  updFTitle();
-}
-function setMode(m,btn){
-  mode=m;
-  document.getElementById('fp-out').classList.toggle('active',m==='outside');
-  document.getElementById('fp-home').classList.toggle('active',m==='homemade');
-  document.querySelectorAll('#sw-o,#sw-h').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-}
-function updFTitle(){
-  var sd=document.getElementById('order-date')?document.getElementById('order-date').value||selDate:selDate;
-  var parts=sd.split('-');
-  document.getElementById('ftitle').textContent='📝 '+parts[0]+'年'+parseInt(parts[1])+'月'+parseInt(parts[2])+'日 '+mt;
-}
-function selR(el){
-  document.querySelectorAll('.ri').forEach(function(i){i.classList.remove('sel');});
-  el.classList.add('sel');
-  var v=el.querySelector('input[type="radio"]').value;
-  var oi=document.getElementById('out-oth');
-  var hw=document.getElementById('history-wrap');
-  oi.style.display=v==='__other__'?'block':'none';
-  hw.style.display=v==='__other__'?'block':'none';
-  if(v==='__other__'){oi.focus();renderHistory();}
-}
-function gchk(id){
-  return Array.from(document.querySelectorAll('#'+id+' input[type="checkbox"]:checked')).map(function(c){return c.value;});
-}
-
-// ── Ntfy 通知 ──────────────────────────────────────
-var NTFY_TOPIC = 'baibao-meal-shen2026';
-
-function sendNtfy(title, body){
-  fetch('https://ntfy.sh/', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      topic: NTFY_TOPIC,
-      title: title,
-      message: body,
-      priority: 3,
-      tags: ['bento']
-    })
-  })
-  .then(function(r){console.log('ntfy:',r.status);})
-  .catch(function(e){console.error('ntfy error:',e);});
-}
-
-function fcLabel(c){
-  if(!c)return'';
-  if(c.type==='outside')return c.food||'';
-  var p=[];
-  if(c.main&&c.main.length)p.push(c.main.join('、'));
-  if(c.side&&c.side.length)p.push(c.side.join('、'));
-  if(c.other)p.push(c.other);
-  return p.join(' + ')||'寶寶煮';
-}
-
-// ── Custom food history ────────────────────────────
-function getHistory(){
-  try{return JSON.parse(localStorage.getItem('foodHistory')||'[]');}catch{return[];}
-}
-function saveToHistory(food){
-  var h=getHistory().filter(function(f){return f!==food;});
-  h.unshift(food);
-  if(h.length>10)h=h.slice(0,10);
-  localStorage.setItem('foodHistory',JSON.stringify(h));
-}
-function deleteHistory(food){
-  var h=getHistory().filter(function(f){return f!==food;});
-  localStorage.setItem('foodHistory',JSON.stringify(h));
-  renderHistory();
-}
-function renderHistory(){
-  var h=getHistory();
-  var wrap=document.getElementById('history-wrap');
-  var chips=document.getElementById('history-chips');
-  if(!h.length){wrap.style.display='none';return;}
-  wrap.style.display='block';
-  chips.innerHTML=h.map(function(f){
-    return '<div class="hchip" data-food="'+f+'">'+
-      '<span>'+f+'</span>'+
-      '<button class="hchip-del" data-food="'+f+'">✕</button>'+
-    '</div>';
-  }).join('');
-  chips.querySelectorAll('.hchip').forEach(function(chip){
-    chip.addEventListener('click',function(e){
-      if(e.target.classList.contains('hchip-del')){
-        e.stopPropagation();
-        deleteHistory(this.getAttribute('data-food'));
-        return;
-      }
-      var food=this.getAttribute('data-food');
-      document.getElementById('out-oth').value=food;
-      toast('已選：'+food+' ✅');
-    });
+// ── OVERVIEW ─────────────────────────────────────────────────
+function renderOverview(){
+  const inc=(D.extraIncome||[]).reduce((s,e)=>s+e.amount,0);
+  const totalDebt=D.debts.reduce((s,d)=>s+d.balance,0);
+  const mDebt=D.debts.filter(d=>d.monthly>0).reduce((s,d)=>s+d.monthly,0);
+  const mFixed=(D.fixedExpenses||[]).reduce((s,e)=>s+e.amount,0);
+  const bal=inc-mDebt-mFixed;
+  const tPnl=D.trades.reduce((s,t)=>s+t.pnl,0);
+  document.getElementById('ov-metrics').innerHTML=`
+    <div class="metric"><div class="metric-lbl">總負債</div><div class="metric-val red">-${fmtA(totalDebt).slice(1)}</div></div>
+    <div class="metric"><div class="metric-lbl">月結餘</div><div class="metric-val ${cc(bal)}">${fmt(bal)}</div></div>
+    <div class="metric"><div class="metric-lbl">操盤損益</div><div class="metric-val ${cc(tPnl)}">${fmt(tPnl)}</div></div>`;
+  // 本月待繳清單
+  const now2=new Date(); const thisMonth=now2.getMonth(); const thisYear=now2.getFullYear();
+  if(!D.paidItems)D.paidItems={};
+  const monthKey=`${thisYear}-${String(thisMonth+1).padStart(2,'0')}`;
+  const billItems=[];
+  // 負債月還款
+  D.debts.filter(d=>d.monthly>0).forEach(d=>{
+    const key=`debt-${d.id}-${monthKey}`;
+    billItems.push({key,name:d.name,amount:d.monthly,day:d.day,type:'debt',color:'var(--blue)'});
   });
-  chips.querySelectorAll('.hchip-del').forEach(function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      deleteHistory(this.getAttribute('data-food'));
+  // 固定支出
+  (D.fixedExpenses||[]).forEach(e=>{
+    const key=`fe-${e.id}-${monthKey}`;
+    billItems.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'fixed',color:'var(--blue)'});
+  });
+  // 到期負債
+  D.debts.filter(d=>d.deadline).forEach(d=>{
+    const days=daysUntil(d.deadline);
+    if(days>=0&&days<=60){const key=`deadline-${d.id}`;billItems.push({key,name:d.name+' 到期',amount:d.balance,day:parseInt((d.deadline||'').split('-')[2])||0,type:'deadline',color:'var(--red)'});}
+  });
+  // 大額支出
+  (D.oneTimeExpenses||[]).forEach(e=>{
+    const days=daysUntil(e.date);
+    if(days>=0&&days<=60){const key=`ot-${e.id}`;billItems.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'onetime',color:'var(--yellow)'});}
+  });
+  billItems.sort((a,b)=>a.day-b.day);
+  const alertsHtml=billItems.length?billItems.map(item=>{
+    const paid=!!(D.paidItems||{})[item.key];
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);${paid?'opacity:.4':''}">
+      <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${item.color};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:${paid?item.color:'transparent'}" onclick="togglePaid('${item.key}')">
+        ${paid?'<span style="color:#fff;font-size:12px;line-height:1">✓</span>':''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;${paid?'text-decoration:line-through;color:var(--text3)':''}">${item.name}</div>
+        <div style="font-size:11px;color:var(--text3)">${item.day?item.day+'號':''}${item.type==='deadline'?' 到期':item.type==='onetime'?' 大額支出':' 還款'}</div>
+      </div>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--red);white-space:nowrap">-$${Math.round(item.amount).toLocaleString()}</span>
+    </div>`;
+  }).join(''):'<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px 0">本月無待繳項目</div>';
+  document.getElementById('ov-alerts').innerHTML=alertsHtml;
+  // cashflow
+  const incLogs=(D.extraIncome||[]).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  let cf=incLogs.length?incLogs.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join(''):`<div class="cf-row"><span style="color:var(--text3);font-size:12px">尚無收入紀錄</span><span></span></div>`;
+  D.debts.filter(d=>d.monthly>0).forEach(d=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${d.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-d.monthly)}</span></div>`;});
+  (D.fixedExpenses||[]).forEach(e=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-e.amount)}</span></div>`;});
+  cf+=`<div class="cf-total"><span>固定後結餘</span><span style="font-family:var(--mono);color:var(--${cc(bal)})">${fmt(bal)}</span></div>`;
+  document.getElementById('ov-cashflow').innerHTML=cf;
+  // progress
+  const loans=D.debts.filter(d=>d.type==='loan'||d.type==='card');
+  document.getElementById('ov-progress').innerHTML=loans.map(d=>{
+    const tot=d.paid+d.balance;const pct=tot>0?Math.min(100,Math.round(d.paid/tot*100)):0;
+    return `<div class="prog-wrap"><div class="prog-lbl"><span>${d.name}</span><span>已還${pct}%・剩 ${fmtA(d.balance).slice(1)}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${tColor(d.type)}"></div></div></div>`;
+  }).join('')||'<div style="font-size:12px;color:var(--text3)">無信貸資料</div>';
+}
+
+// ── DEBTS ────────────────────────────────────────────────────
+function initDebtDrag(){
+  const list=document.getElementById('debts-list');
+  if(!list)return;
+  let dragId=null,dragEl=null;
+  list.querySelectorAll('.debt-item-wrap').forEach(el=>{
+    el.addEventListener('dragstart',e=>{dragId=parseInt(el.dataset.id);dragEl=el;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragEl=null;});
+    el.addEventListener('dragover',e=>{e.preventDefault();if(!dragEl||el===dragEl)return;
+      const rect=el.getBoundingClientRect();const mid=rect.top+rect.height/2;
+      const overId=parseInt(el.dataset.id);
+      const fi=D.debts.findIndex(d=>d.id===dragId);
+      const ti=D.debts.findIndex(d=>d.id===overId);
+      if(fi<0||ti<0||fi===ti)return;
+      const moved=D.debts.splice(fi,1)[0];
+      const newTi=D.debts.findIndex(d=>d.id===overId);
+      D.debts.splice(e.clientY>mid?newTi+1:newTi,0,moved);
+      save();renderDebts();
     });
   });
 }
+function toggleDebtDetail(id){
+  const el=document.getElementById('debt-detail-'+id);
+  if(!el)return;
+  const open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  const arr=document.getElementById('debt-arr-'+id);
+  if(arr)arr.textContent=open?'▸':'▾';
+}
+function renderDebts(){
+  const dl=document.getElementById('debts-list');
+  dl.innerHTML=D.debts.map(d=>{
+    const tot=d.paid+d.balance;
+    const pct=tot>0?Math.min(100,Math.round(d.paid/tot*100)):0;
+    const monthsLeft=d.periods>0?d.periods:(d.monthly>0&&d.balance>0?Math.ceil(d.balance/d.monthly):0);
+    const interest=d.rate>0&&d.balance>0?Math.round(d.balance*(d.rate/100/12)):0;
+    return `
+    <div class="debt-item-wrap" style="margin-bottom:6px" data-id="${d.id}" draggable="true">
+      <div class="debt-row" style="cursor:pointer" onclick="toggleDebtDetail(${d.id})">
+        <span class="drag-handle" onclick="event.stopPropagation()" title="拖拉排序">⠿</span>
+        <div class="debt-dot" style="background:${tColor(d.type)}"></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:4px">
+            <span class="debt-name">${d.name}</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--red);white-space:nowrap">-${fmtA(d.balance).slice(1)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;display:flex;gap:6px">
+            ${d.monthly?`<span>${fmt(-d.monthly)}/月</span>`:''}
+            ${d.day?`<span>每月${d.day}號</span>`:''}
+            ${d.deadline?`<span style="color:var(--yellow)">${d.deadline}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span id="debt-arr-${d.id}" style="font-size:11px;color:var(--text3);margin-right:2px">▸</span>
+          <div class="debt-btns" onclick="event.stopPropagation()">
+            <button class="btn-pay" onclick="openPay(${d.id})">還款 ✓</button>
+            <button class="btn-edit" onclick="editDebt(${d.id})">編輯</button>
+            <button class="btn-del" onclick="showCfm('cfm-d-${d.id}')">刪</button>
+          </div>
+        </div>
+      </div>
+      <div id="debt-detail-${d.id}" style="display:none;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:10px 14px;margin-top:-6px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;margin-bottom:8px">
+          <div><span style="color:var(--text3)">利率</span><span style="font-family:var(--mono);margin-left:6px;font-weight:500">${d.rate?d.rate+'%':'—'}</span></div>
+          <div><span style="color:var(--text3)">本月利息</span><span style="font-family:var(--mono);margin-left:6px;color:var(--red)">${interest?'$'+interest.toLocaleString():'—'}</span></div>
+          <div><span style="color:var(--text3)">剩餘期數</span><span style="font-family:var(--mono);margin-left:6px">${d.periods?d.periods+'期':'—'}</span></div>
+          <div><span style="color:var(--text3)">預計還清</span><span style="font-family:var(--mono);margin-left:6px">${monthsLeft?monthsLeft+'個月':'—'}</span></div>
+          <div><span style="color:var(--text3)">已還總額</span><span style="font-family:var(--mono);margin-left:6px;color:var(--green)">${d.paid?'$'+Math.round(d.paid).toLocaleString():'$0'}</span></div>
+          <div><span style="color:var(--text3)">還款進度</span><span style="font-family:var(--mono);margin-left:6px">${pct}%</span></div>
+          ${d.type==='friend'&&d.deadline?`<div style="grid-column:1/-1"><span style="color:var(--text3)">到期日</span><span style="font-family:var(--mono);margin-left:6px;color:var(--yellow)">${d.deadline}</span></div>`:''}
+        </div>
+        <div style="background:var(--border);border-radius:3px;height:5px;overflow:hidden">
+          <div style="height:100%;border-radius:3px;background:${tColor(d.type)};width:${pct}%;transition:width .5s"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right">已還 ${pct}%・剩 $${Math.round(d.balance).toLocaleString()}</div>
+      </div>
+      <div class="cfm" id="cfm-d-${d.id}"><div class="cfm-msg">確定刪除「${d.name}」？</div><div class="cfm-btns"><button class="btn btn-danger" style="flex:1;padding:7px;font-size:12px" onclick="removeDebt(${d.id})">確定刪除</button><button class="btn btn-secondary" style="flex:1;padding:7px;font-size:12px" onclick="hideCfm('cfm-d-${d.id}')">取消</button></div></div>
+    </div>`;
+  }).join('')||'<div class="empty">尚無負債</div>';
+  initDebtDrag();
+  document.getElementById('receivables-list').innerHTML=(D.receivables||[]).map(r=>`
+    <div class="debt-row">
+      <div class="debt-dot" style="background:var(--green)"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:4px"><span class="debt-name">${r.name}</span><span class="tag t-green">應收</span><span style="font-family:var(--mono);font-size:11px;color:var(--green);white-space:nowrap">+${fmtA(r.amount).slice(1)}</span></div>
+        ${r.note?`<div style="font-size:11px;color:var(--text2);margin-top:1px">${r.note}</div>`:''}
+      </div>
+      <div class="debt-btns">
+        <button class="btn-pay" onclick="openCollect(${r.id})">收款 ✓</button>
+        <button class="btn-del" onclick="showCfm('cfm-r-${r.id}')">刪</button>
+      </div>
+    </div>
+    <div class="cfm" id="cfm-r-${r.id}"><div class="cfm-msg">確定刪除？</div><div class="cfm-btns"><button class="btn btn-danger" style="flex:1;padding:7px;font-size:12px" onclick="removeReceivable(${r.id})">確定</button><button class="btn btn-secondary" style="flex:1;padding:7px;font-size:12px" onclick="hideCfm('cfm-r-${r.id}')">取消</button></div></div>
+  `).join('')||'<div class="empty">無應收款</div>';
+  // pay log
+  const logs=[...(D.payLogs||[])].sort((a,b)=>b.ts-a.ts).slice(0,20);
+  document.getElementById('pay-log-list').innerHTML=logs.length?logs.map(l=>`<div class="pay-log">${l.date} · ${l.debtName} · <span style="color:var(--green);font-family:var(--mono)">+${fmtA(l.amount).slice(1)}</span>${l.note?' · '+l.note:''}</div>`).join(''):'<div class="empty">尚無還款紀錄</div>';
+}
 
-function saveOrder(){
-  var content;
-  if(mode==='outside'){
-    var sel=document.querySelector('input[name="out"]:checked');
-    if(!sel){toast('請選擇要吃什麼 🍴');return;}
-    var food=sel.value;
-    if(food==='__other__'){food=document.getElementById('out-oth').value.trim();if(!food){toast('請填寫其他 ✏️');return;}
-      saveToHistory(food);}
-    content={type:'outside',food:food};
-  }else{
-    var main=gchk('cg-main'),side=gchk('cg-side'),snack=gchk('cg-snack');
-    var other=document.getElementById('home-oth').value.trim();
-    if(!main.length&&!side.length&&!snack.length&&!other){toast('請至少勾選一個品項 🥘');return;}
-    content={type:'homemade',main:main,side:side,snack:snack,other:other};
+// ── CALENDAR ─────────────────────────────────────────────────
+function renderCalendar(){
+  const now=new Date();const mo=now.getMonth();const yr=now.getFullYear();
+  const items=[];
+  D.debts.filter(d=>d.monthly>0).forEach(d=>items.push({day:d.day,name:d.name,amount:-d.monthly,type:'loan'}));
+  items.sort((a,b)=>a.day-b.day);
+  const bg={loan:'rgba(26,111,191,.1)',fixed:'rgba(30,126,74,.1)'};
+  const cl={loan:'var(--blue)',fixed:'var(--green)'};
+  document.getElementById('cal-monthly').innerHTML=items.map(i=>{
+    const past=i.day<now.getDate();
+    return `<div class="cal-row" style="${past?'opacity:.4':''}">
+      <div class="cal-badge" style="background:${bg[i.type]||bg.loan};color:${cl[i.type]||cl.loan}">${i.day}</div>
+      <div class="cal-info"><div class="cal-name">${i.name}</div><div class="cal-sub">${yr}/${String(mo+1).padStart(2,'0')}/${String(i.day).padStart(2,'0')}</div></div>
+      <div class="cal-amt red">${fmt(i.amount)}</div>
+    </div>`;
+  }).join('')||'<div class="empty">無固定還款</div>';
+  const rMap={once:'單次',yearly:'每年',monthly:'每月'};
+  // fixed expenses
+  const fixedEl=document.getElementById('cal-fixed');
+  if(fixedEl){
+    const fe=D.fixedExpenses||[];
+    fixedEl.innerHTML=fe.length?fe.map(e=>`
+      <div class="cal-row">
+        <div class="cal-badge" style="background:rgba(26,111,191,.1);color:var(--blue);font-size:11px">${e.day||'每月'}</div>
+        <div class="cal-info"><div class="cal-name">${e.name}</div><div class="cal-sub">每月固定${e.note?' · '+e.note:''}</div></div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div class="cal-amt red">${fmt(-e.amount)}</div>
+          <button class="btn-edit" style="padding:3px 7px;font-size:11px" onclick="editFixedExpense(${e.id})">編輯</button>
+          <button class="btn-del" style="padding:3px 7px;font-size:11px" onclick="showCfm('cfm-fe-${e.id}')">刪</button>
+        </div>
+      </div>
+      <div class="cfm" id="cfm-fe-${e.id}"><div class="cfm-msg">確定刪除「${e.name}」每月固定支出？</div><div class="cfm-btns"><button class="btn btn-danger" style="flex:1;padding:7px;font-size:12px" onclick="removeFixedExpense(${e.id})">確定</button><button class="btn btn-secondary" style="flex:1;padding:7px;font-size:12px" onclick="hideCfm('cfm-fe-${e.id}')">取消</button></div></div>
+    `).join(''):'<div class="empty" style="padding:16px">尚無每月固定支出<br><span style="font-size:11px">點右上＋新增，如保費、會費等</span></div>';
   }
-  var sd=document.getElementById('order-date').value||selDate;
-  var parts=sd.split('-');
-  var dateLabel=parseInt(parts[1])+'月'+parseInt(parts[2])+'日';
-  var mealLabel=mt==='午餐'?'午餐':'晚餐';
-  db.ref('records').push({date:sd,meal:mt,content:content,ready:false,ts:Date.now()})
-    .then(function(){
-      toast('已儲存！開飯囉 🎉');
-      resetForm();
-      closeForm();
-      // 發送 Ntfy 通知
-      sendNtfy(
-        '🍱 '+dateLabel+' '+mealLabel+'點餐啦！',
-        fcLabel(content)+(content.type==='outside'?' 🥡':' 👨‍🍳')
-      );
-    })
-    .catch(function(){toast('儲存失敗，請確認網路 ⚠️');});
-}
-function resetForm(){
-  document.querySelectorAll('input[name="out"]').forEach(function(r){r.checked=false;});
-  document.querySelectorAll('.ri').forEach(function(i){i.classList.remove('sel');});
-  document.getElementById('out-oth').style.display='none';
-  document.getElementById('out-oth').value='';
-  document.querySelectorAll('#fp-home input[type="checkbox"]').forEach(function(c){c.checked=false;});
-  document.getElementById('home-oth').value='';
+  document.getElementById('cal-onetime').innerHTML=[...(D.oneTimeExpenses||[])].sort((a,b)=>new Date(a.date)-new Date(b.date)).map(e=>{
+    const past=new Date(e.date)<today();
+    return `<div class="cal-row" style="${past?'opacity:.4':''}">
+      <div class="cal-badge" style="background:rgba(154,104,0,.1);color:var(--yellow);font-size:11px">${e.date.slice(5)}</div>
+      <div class="cal-info"><div class="cal-name">${e.name}<span class="tag t-gray" style="font-size:9px">${rMap[e.repeat]||''}</span></div><div class="cal-sub">${e.note||''}</div></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="cal-amt red">${fmt(-e.amount)}</div>
+        <button class="btn-del" style="padding:3px 7px;font-size:11px" onclick="showCfm('cfm-ot-${e.id}')">刪</button>
+      </div>
+    </div>
+    <div class="cfm" id="cfm-ot-${e.id}"><div class="cfm-msg">確定刪除「${e.name}」？</div><div class="cfm-btns"><button class="btn btn-danger" style="flex:1;padding:7px;font-size:12px" onclick="removeOnetime(${e.id})">確定</button><button class="btn btn-secondary" style="flex:1;padding:7px;font-size:12px" onclick="hideCfm('cfm-ot-${e.id}')">取消</button></div></div>`;
+  }).join('')||'<div class="empty">尚無大額支出</div>';
 }
 
-// ── Fridge ─────────────────────────────────────────
-function addFridge(){
-  var cat=document.getElementById('fncat').value;
-  var name=document.getElementById('fnname').value.trim();
-  var qty=parseFloat(document.getElementById('fnqty').value)||1;
-  var unit=document.getElementById('fnunit').value.trim()||'份';
-  if(!name){toast('請輸入食材名稱 🥕');return;}
-  db.ref('fridge').push({cat:cat,name:name,qty:qty,unit:unit,updatedAt:Date.now()});
-  document.getElementById('fnname').value='';
-  document.getElementById('fnqty').value='';
-  document.getElementById('fnunit').value='';
-  toast('已加入 '+name+' ✅');
-}
-function updQty(k,d){
-  var i=fridgeD[k];if(!i)return;
-  db.ref('fridge/'+k).update({qty:Math.max(0,(i.qty||0)+d),updatedAt:Date.now()});
-}
-function delFridge(k){db.ref('fridge/'+k).remove();toast('已移除');}
-function setFC(c){fcat=c;renderFridge(fridgeD);}
-function ss(q){if(q===0)return{c:'sout',l:'已用完'};if(q<=1)return{c:'slow',l:'快用完'};return{c:'sok',l:'充足'};}
-
-function renderFridge(data){
-  fridgeD=data||{};
-  var all=Object.entries(fridgeD).map(function(e){return Object.assign({},e[1],{_k:e[0]});});
-  var lat=all.reduce(function(m,i){return Math.max(m,i.updatedAt||0);},0);
-  document.getElementById('fupd').textContent=lat?'更新：'+new Date(lat).toLocaleString('zh-TW'):'';
-  var tot=all.length,out=all.filter(function(i){return i.qty===0;}).length;
-  var low=all.filter(function(i){return i.qty>0&&i.qty<=1;}).length;
-  document.getElementById('fsum').innerHTML=
-    '<div class="fst"><span class="fsn">'+tot+'</span><span class="fsl">總品項</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#2e7d32">'+(tot-out-low)+'</span><span class="fsl">充足</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#e65100">'+low+'</span><span class="fsl">快用完</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#b71c1c">'+out+'</span><span class="fsl">用完</span></div>';
-  var cats=['all'].concat([...new Set(all.map(function(i){return i.cat;}))]);
-  document.getElementById('fcats').innerHTML=cats.map(function(c){
-    return '<button class="fcat'+(fcat===c?' active':'')+'" onclick="setFC(\''+c+'\')">'+(c==='all'?'🗂️ 全部':(CAT[c]||'📦')+' '+c)+'</button>';
-  }).join('');
-  var fil=fcat==='all'?all:all.filter(function(i){return i.cat===fcat;});
-  var rows=document.getElementById('frows');
-  if(!fil.length){rows.innerHTML='<div class="femp">'+(all.length?'此分類沒有食材':'冰箱是空的 🧊')+'</div>';return;}
-  rows.innerHTML=fil.map(function(i){
-    var s=ss(i.qty);
-    return '<div class="frow">'+
-      '<span style="font-size:.9rem">'+(CAT[i.cat]||'📦')+'</span>'+
-      '<span class="fname">'+i.name+'</span>'+
-      '<div class="qw">'+
-        '<button class="qb" onclick="updQty(\''+i._k+'\',-1)">−</button>'+
-        '<span class="qv">'+i.qty+'<small style="font-size:.58rem;font-weight:400;color:var(--soft)"> '+i.unit+'</small></span>'+
-        '<button class="qb" onclick="updQty(\''+i._k+'\',1)">＋</button>'+
-      '</div>'+
-      '<span class="sb '+s.c+'">'+s.l+'</span>'+
-      '<button class="xb" onclick="delFridge(\''+i._k+'\')">✕</button>'+
-    '</div>';
-  }).join('');
+// ── TRADES ───────────────────────────────────────────────────
+function renderTrades(){
+  const tPnl=D.trades.reduce((s,t)=>s+t.pnl,0);
+  const vs=D.trades.filter(t=>t.type==='violation');
+  const vPnl=vs.reduce((s,t)=>s+t.pnl,0);
+  document.getElementById('tr-metrics').innerHTML=`
+    <div class="metric"><div class="metric-lbl">累計損益</div><div class="metric-val ${cc(tPnl)}">${fmt(tPnl)}</div></div>
+    <div class="metric"><div class="metric-lbl">當沖違規</div><div class="metric-val red">${fmt(vPnl)}</div></div>
+    <div class="metric"><div class="metric-lbl">正常操作</div><div class="metric-val ${cc(tPnl-vPnl)}">${fmt(tPnl-vPnl)}</div></div>`;
+  document.getElementById('tr-violations').innerHTML=vs.map((v,i)=>`
+    <div class="trade-row"><div class="trade-hdr"><span class="trade-name red">第${i+1}次 — ${v.symbol}</span><span style="font-family:var(--mono);font-size:12px;color:var(--red)">${fmt(v.pnl)}</span></div><div class="trade-sub">${v.date} ／ ${v.qty}張 ／ ${v.note}</div></div>`).join('')||'<div class="empty">暫無違規</div>';
+  const tl={futures:'期貨',stock:'現股',violation:'⚠ 當沖'};
+  document.getElementById('tr-list').innerHTML=[...D.trades].sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`
+    <div class="trade-row"><div class="trade-hdr"><span class="trade-name ${t.type==='violation'?'red':''}">${t.symbol}</span><span style="font-family:var(--mono);font-size:12px;color:var(--${cc(t.pnl)})">${fmt(t.pnl)}</span></div><div class="trade-sub">${t.date} ／ ${tl[t.type]||t.type} ／ ${t.qty}口/張${t.note?' ／ '+t.note:''}</div></div>`).join('');
 }
 
-
-// ── Beauty (化妝品備品) ─────────────────────────────
-var BCAT={'底妝':'💄','眼妝':'👁️','唇妝':'💋','保養':'🧴','卸妝':'🧹','其他':'📦'};
-var beautyD={}, bcat='all';
-
-var DEFAULT_BEAUTY=[
-  {cat:'底妝',name:'粉底液'},{cat:'底妝',name:'氣墊'},{cat:'底妝',name:'蜜粉'},
-  {cat:'眼妝',name:'眼線筆'},{cat:'眼妝',name:'睫毛膏'},{cat:'眼妝',name:'眼影'},
-  {cat:'唇妝',name:'口紅'},{cat:'唇妝',name:'唇釉'},
-  {cat:'保養',name:'化妝水'},{cat:'保養',name:'乳液'},{cat:'保養',name:'防曬'},{cat:'保養',name:'精華液'},
-  {cat:'卸妝',name:'卸妝油'},{cat:'卸妝',name:'卸妝棉'}
-];
-
-function seedBeauty(){
-  db.ref('beauty').once('value',function(snap){
-    if(!snap.val()){
-      DEFAULT_BEAUTY.forEach(function(item){
-        db.ref('beauty').push({cat:item.cat,name:item.name,note:'',status:'ok',updatedAt:Date.now()});
-      });
-    }
-  });
+// ── SETTINGS ─────────────────────────────────────────────────
+function renderSettings(){
+  // income now on dedicated page
+  document.getElementById('ntfy-topic').value=D.ntfyTopic||'';
+  document.getElementById('ntfy-7d').checked=D.ntfy7d!==false;
+  document.getElementById('ntfy-3d').checked=D.ntfy3d!==false;
+  document.getElementById('ntfy-1d').checked=!!D.ntfy1d;
+  const sgid=document.getElementById('settings-gist-id');
+  const stok=document.getElementById('settings-token');
+  if(sgid)sgid.value=localStorage.getItem('cfg_gist_id')||'';
+  if(stok)stok.value='';
+  document.getElementById('custom-types-list').innerHTML=(D.customTypes||[]).length
+    ?(D.customTypes||[]).map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${t}</span><button class="btn-del" onclick="removeCustomType('${t}')">刪除</button></div>`).join('')
+    :'<div style="font-size:12px;color:var(--text3);padding:4px 0">尚無自訂類型</div>';
 }
 
-function addBeauty(){
-  var cat=document.getElementById('bncat').value;
-  var name=document.getElementById('bnname').value.trim();
-  var note=document.getElementById('bnnote').value.trim();
-  if(!name){toast('請輸入品名 💄');return;}
-  db.ref('beauty').push({cat:cat,name:name,note:note,status:'ok',updatedAt:Date.now()});
-  document.getElementById('bnname').value='';
-  document.getElementById('bnnote').value='';
-  toast('已加入 '+name+' ✅');
-}
-
-function delBeauty(k){db.ref('beauty/'+k).remove();toast('已移除');}
-function setBCat(c){bcat=c;renderBeauty(beautyD);}
-
-var bQmKey='', bQmItemName='';
-function openBeautyModal(key,name){
-  bQmKey=key; bQmItemName=name;
-  // reuse qty modal
-  document.getElementById('qm-title').textContent=name;
-  document.getElementById('qm-input').value='';
-  document.getElementById('qty-modal').style.display='flex';
-}
-
-function renderBeauty(data){
-  beautyD=data||{};
-  var all=Object.entries(beautyD).map(function(e){return Object.assign({},e[1],{_k:e[0]});});
-  var lat=all.reduce(function(m,i){return Math.max(m,i.updatedAt||0);},0);
-  document.getElementById('bupd').textContent=lat?'更新：'+new Date(lat).toLocaleString('zh-TW'):'';
-
-  var tot=all.length,out=all.filter(function(i){return i.status==='out';}).length;
-  var need=all.filter(function(i){return i.status==='need';}).length;
-  document.getElementById('bsum').innerHTML=
-    '<div class="fst"><span class="fsn">'+tot+'</span><span class="fsl">總品項</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#2e7d32">'+(tot-out-need)+'</span><span class="fsl">充足</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#e65100">'+need+'</span><span class="fsl">快沒了</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#b71c1c">'+out+'</span><span class="fsl">用完</span></div>';
-
-  var cats=['all'].concat(Array.from(new Set(all.map(function(i){return i.cat;}))));
-  var catHtml='';
-  cats.forEach(function(c){
-    var nc=all.filter(function(i){return i.cat===c&&(i.status==='need'||i.status==='out');}).length;
-    var badge=nc&&c!=='all'?'<span style="background:#e05a5a;color:white;border-radius:100px;font-size:.6rem;padding:0 .35rem;margin-left:.25rem">'+nc+'</span>':'';
-    var lbl=c==='all'?'🗂️ 全部':(BCAT[c]||'📦')+' '+c;
-    catHtml+='<button class="fcat'+(bcat===c?' active':'')+'" data-cat="'+c+'">'+lbl+badge+'</button>';
-  });
-  document.getElementById('bcats').innerHTML=catHtml;
-  document.querySelectorAll('#bcats .fcat').forEach(function(btn){
-    btn.addEventListener('click',function(){setBCat(this.getAttribute('data-cat'));});
-  });
-
-  var display=bcat==='all'?all:all.filter(function(i){return i.cat===bcat;});
-  display.sort(function(a,b){var o={out:0,need:1,ok:2};return(o[a.status]||2)-(o[b.status]||2);});
-
-  var rows=document.getElementById('brows');
-  if(!display.length){rows.innerHTML='<div class="femp">此分類沒有品項</div>';return;}
-
-  var html='<div class="scard-grid">';
-  display.forEach(function(item){
-    var sc=item.status==='out'?'out':item.status==='need'?'need':'ok';
-    var statusLabel=item.status==='ok'?'✅ 充足':item.status==='need'?('⚠️ 快沒'+(item.qty?' 剩'+item.qty:'')):('❌ 用完');
-    var icon=BCAT[item.cat]||'📦';
-    html+='<div class="scard '+sc+'" data-key="'+item._k+'" data-name="'+item.name+'">'+
-      '<button class="scard-del" data-key="'+item._k+'">✕</button>'+
-      '<span class="scard-icon">'+icon+'</span>'+
-      '<div class="scard-name">'+item.name+'</div>'+
-      (item.note?'<div class="scard-note">'+item.note+'</div>':'')+
-      '<div class="scard-status">'+statusLabel+'</div>'+
-    '</div>';
-  });
-  html+='</div>';
-  rows.innerHTML=html;
-
-  rows.querySelectorAll('.scard').forEach(function(card){
-    card.addEventListener('click',function(e){
-      if(e.target.classList.contains('scard-del'))return;
-      // reuse supply modal but for beauty
-      bQmKey=this.getAttribute('data-key');
-      bQmItemName=this.getAttribute('data-name');
-      var cur=beautyD[bQmKey]?beautyD[bQmKey].status:'ok';
-      if(cur==='ok'){
-        // open action modal
-        qmKey=''; // clear supply key
-        document.getElementById('qm-title').textContent=bQmItemName;
-        document.getElementById('qm-input').value='';
-        document.getElementById('qty-modal').style.display='flex';
-        // override confirm to use beauty
-        window._beautyModalMode=true;
-      } else {
-        db.ref('beauty/'+bQmKey).update({status:'ok',qty:'',updatedAt:Date.now()});
-        toast('✅ 已補充好！');
-        bQmKey='';
-      }
-    });
-  });
-  rows.querySelectorAll('.scard-del').forEach(function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      delBeauty(this.getAttribute('data-key'));
-    });
-  });
-}
-
-db.ref('beauty').on('value',function(snap){renderBeauty(snap.val()||{});});
-document.getElementById('bnname').addEventListener('keydown',function(e){if(e.key==='Enter')addBeauty();});
-seedBeauty();
-
-// ── Firebase listeners ─────────────────────────────
-db.ref('records').on('value',function(snap){
-  allR=snap.val()||{};
-  renderCal();
-  renderDetail();
-});
-db.ref('fridge').on('value',function(snap){
-  renderFridge(snap.val()||{});
-});
-
-// ── Init ───────────────────────────────────────────
-document.getElementById('fnname').addEventListener('keydown',function(e){if(e.key==='Enter')addFridge();});
-renderCal();
-selDay(TODAY);
-
-// ── Supply (家裡庫存) ───────────────────────────────
-var SCAT = {'盥洗用品':'🪥','清潔用品':'🧹','日常用品':'🧻','廚房':'🍳','阿咪':'🐱','其他':'📦'};
-var supplyD = {}, scat = 'all', shopMode = false;
-
-// Default items to seed if empty
-var DEFAULT_SUPPLY = [
-  {cat:'盥洗用品',name:'洗髮精'},{cat:'盥洗用品',name:'沐浴乳'},
-  {cat:'盥洗用品',name:'牙膏'},{cat:'盥洗用品',name:'洗手乳'},
-  {cat:'清潔用品',name:'洗碗精'},{cat:'清潔用品',name:'洗衣精'},
-  {cat:'清潔用品',name:'除臭劑'},{cat:'清潔用品',name:'垃圾袋'},
-  {cat:'日常用品',name:'衛生紙'},{cat:'日常用品',name:'濕紙巾'},
-  {cat:'廚房',name:'保鮮膜'},{cat:'廚房',name:'廚房紙巾'},
-  {cat:'廚房',name:'食用油'},{cat:'廚房',name:'鹽'},
-  {cat:'阿咪',name:'貓食',note:'皇家-室內成貓'},{cat:'阿咪',name:'貓砂',note:'藍鑽'},
-  {cat:'其他',name:'酒精'},{cat:'其他',name:'OK繃'}
-];
-
-function seedSupply(){
-  db.ref('supply').once('value',function(snap){
-    if(!snap.val()){
-      DEFAULT_SUPPLY.forEach(function(item){
-        db.ref('supply').push({cat:item.cat,name:item.name,note:item.note||'',status:'ok',updatedAt:Date.now()});
-      });
-    }
-  });
-}
-
-function toggleShopMode(){
-  shopMode=!shopMode;
-  document.getElementById('shop-mode-btn').classList.toggle('active',shopMode);
-  document.getElementById('shop-banner').style.display=shopMode?'block':'none';
-  document.getElementById('sadd-row').style.display=shopMode?'none':'flex';
-  renderSupply(supplyD);
-}
-
-function setSupplyStatus(k,status){
-  db.ref('supply/'+k).update({status:status,updatedAt:Date.now()});
-  if(status==='need'||status==='out'){
-    var item=supplyD[k];
-    if(item){
-      sendNtfy(
-        '🛒 '+(status==='out'?'已用完':'快沒了')+'：'+item.name,
-        item.cat+' · '+item.name+(item.note?' ('+item.note+')':'')
-      );
-    }
+// ── PAY MODAL ────────────────────────────────────────────────
+function openPay(id){
+  const d=D.debts.find(x=>x.id===id);if(!d)return;
+  document.getElementById('pay-modal-title').textContent=`還款 · ${d.name}`;
+  document.getElementById('pay-debt-id').value=id;
+  document.getElementById('pay-amount').value='';
+  document.getElementById('pay-note').value='';
+  const btns=[];
+  if(d.monthly){
+    btns.push({lbl:`月還款額 ${fmtA(d.monthly)}`,amt:d.monthly});
+    btns.push({lbl:`半額 ${fmtA(Math.round(d.monthly/2))}`,amt:Math.round(d.monthly/2)});
   }
-}
-
-function addSupply(){
-  var cat=document.getElementById('sncat').value;
-  var name=document.getElementById('snname').value.trim();
-  var note=document.getElementById('snnote').value.trim();
-  if(!name){toast('請輸入品名 📦');return;}
-  db.ref('supply').push({cat:cat,name:name,note:note,status:'ok',updatedAt:Date.now()});
-  document.getElementById('snname').value='';
-  document.getElementById('snnote').value='';
-  toast('已加入 '+name+' ✅');
-}
-
-function delSupply(k){db.ref('supply/'+k).remove();toast('已刪除');}
-
-function setSCat(c){scat=c;renderSupply(supplyD);}
-
-// ── Qty Modal ──────────────────────────────────────
-var qmKey='', qmItemName='';
-
-function openActionModal(key, name){
-  qmKey=key; qmItemName=name;
-  document.getElementById('qm-title').textContent=name;
-  document.getElementById('qm-input').value='';
-  document.getElementById('qty-modal').style.display='flex';
-}
-function closeQtyModal(e){
-  if(e&&e.target!==document.getElementById('qty-modal'))return;
-  document.getElementById('qty-modal').style.display='none';
-  qmKey=''; qmItemName='';
-}
-function doRefill(){
-  if(window._beautyModalMode&&bQmKey){
-    db.ref('beauty/'+bQmKey).update({status:'ok',qty:'',updatedAt:Date.now()});
-    document.getElementById('qty-modal').style.display='none';
-    toast('✅ 已補充好！');
-    bQmKey='';window._beautyModalMode=false;return;
+  if(d.balance){
+    btns.push({lbl:`全額清償 ${fmtA(d.balance)}`,amt:d.balance});
   }
-  if(!qmKey)return;
-  db.ref('supply/'+qmKey).update({status:'ok',qty:'',updatedAt:Date.now()});
-  document.getElementById('qty-modal').style.display='none';
-  toast('✅ 已補充好！');
-  qmKey=''; qmItemName='';
+  document.getElementById('pay-quick-btns').innerHTML=btns.map(b=>
+    `<button class="btn-pay" style="font-size:12px;padding:6px 12px" onclick="setPayAmt(${b.amt})">${b.lbl}</button>`
+  ).join('')+(btns.length?'':'');
+  openModal('modal-pay');
 }
-function confirmQtyModal(){
-  var qty=document.getElementById('qm-input').value.trim();
-  if(window._beautyModalMode&&bQmKey){
-    db.ref('beauty/'+bQmKey).update({status:'need',qty:qty,updatedAt:Date.now()});
-    document.getElementById('qty-modal').style.display='none';
-    toast('已標記快沒 ⚠️');
-    bQmKey='';window._beautyModalMode=false;return;
-  }
-  if(!qmKey)return;
-  db.ref('supply/'+qmKey).update({status:'need',qty:qty,updatedAt:Date.now()});
-  var item=supplyD[qmKey];
-  if(item){
-    sendNtfy(
-      '⚠️ 快沒了：'+item.name,
-      item.name+(qty?' 剩 '+qty:'')+(item.note?' ('+item.note+')':'')
-    );
-  }
-  document.getElementById('qty-modal').style.display='none';
-  toast('已通知對方 ⚠️');
-  qmKey=''; qmItemName='';
+function openCollect(id){
+  const r=D.receivables.find(x=>x.id===id);if(!r)return;
+  document.getElementById('pay-modal-title').textContent=`收款 · ${r.name}`;
+  document.getElementById('pay-debt-id').value='rec_'+id;
+  document.getElementById('pay-amount').value='';
+  document.getElementById('pay-note').value='';
+  document.getElementById('pay-quick-btns').innerHTML=`<button class="btn-pay" style="font-size:12px;padding:6px 12px" onclick="setPayAmt(${r.amount})">全額收回 ${fmtA(r.amount)}</button>`;
+  openModal('modal-pay');
 }
-
-function renderSupply(data){
-  supplyD=data||{};
-  var all=Object.entries(supplyD).map(function(e){return Object.assign({},e[1],{_k:e[0]});});
-  var display=shopMode?all.filter(function(i){return i.status==='need'||i.status==='out';}):all.slice();
-  if(scat!=='all') display=display.filter(function(i){return i.cat===scat;});
-
-  // summary
-  var tot=all.length;
-  var out=all.filter(function(i){return i.status==='out';}).length;
-  var need=all.filter(function(i){return i.status==='need';}).length;
-  document.getElementById('ssum').innerHTML=
-    '<div class="fst"><span class="fsn">'+tot+'</span><span class="fsl">總品項</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#2e7d32">'+(tot-out-need)+'</span><span class="fsl">充足</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#e65100">'+need+'</span><span class="fsl">快沒了</span></div>'+
-    '<div class="fst"><span class="fsn" style="color:#b71c1c">'+out+'</span><span class="fsl">用完</span></div>';
-
-  // cat tabs
-  var cats=['all'].concat(Array.from(new Set(all.map(function(i){return i.cat;}))));
-  var catHtml='';
-  cats.forEach(function(c){
-    var nc=all.filter(function(i){return i.cat===c&&(i.status==='need'||i.status==='out');}).length;
-    var badge=nc&&c!=='all'?'<span style="background:#e05a5a;color:white;border-radius:100px;font-size:.6rem;padding:0 .35rem;margin-left:.25rem">'+nc+'</span>':'';
-    var lbl=c==='all'?'🗂️ 全部':(SCAT[c]||'📦')+' '+c;
-    catHtml+='<button class="fcat'+(scat===c?' active':'')+'" data-cat="'+c+'">'+lbl+badge+'</button>';
-  });
-  document.getElementById('scats').innerHTML=catHtml;
-  document.querySelectorAll('#scats .fcat').forEach(function(btn){
-    btn.addEventListener('click',function(){setSCat(this.getAttribute('data-cat'));});
-  });
-
-  // card grid
-  var rows=document.getElementById('srows');
-  if(!display.length){
-    rows.innerHTML='<div class="femp">'+(shopMode?'太棒了！目前沒有需要採購的品項 🎉':'此分類沒有品項')+'</div>';
-    return;
+function setPayAmt(amt){document.getElementById('pay-amount').value=amt;}
+function confirmPay(){
+  const rawId=document.getElementById('pay-debt-id').value;
+  const amt=parseFloat(document.getElementById('pay-amount').value)||0;
+  const note=document.getElementById('pay-note').value.trim();
+  if(!amt)return alert('請輸入金額');
+  if(!D.payLogs)D.payLogs=[];
+  if(rawId.startsWith('rec_')){
+    const rid=parseInt(rawId.replace('rec_',''));
+    const r=D.receivables.find(x=>x.id===rid);if(!r)return;
+    r.amount=Math.max(0,r.amount-amt);
+    D.payLogs.push({id:D.nextId++,debtId:rid,debtName:'[收款] '+r.name,amount:amt,note,date:new Date().toISOString().slice(0,10),ts:Date.now(),type:'collect'});
+    if(r.amount<=0)D.receivables=D.receivables.filter(x=>x.id!==rid);
+  } else {
+    const id=parseInt(rawId);
+    const d=D.debts.find(x=>x.id===id);if(!d)return;
+    d.balance=Math.max(0,d.balance-amt);
+    d.paid=(d.paid||0)+amt;
+    if(d.periods>0)d.periods=Math.max(0,d.periods-1);
+    D.payLogs.push({id:D.nextId++,debtId:id,debtName:d.name,amount:amt,note,date:new Date().toISOString().slice(0,10),ts:Date.now(),type:'pay'});
   }
-
-  // sort: out → need → ok
-  display.sort(function(a,b){
-    var o={out:0,need:1,ok:2};
-    return (o[a.status]||2)-(o[b.status]||2);
-  });
-
-  var html='<div class="scard-grid">';
-  display.forEach(function(item){
-    var sc=item.status==='out'?'out':item.status==='need'?'need':'ok';
-    var statusLabel='';
-    if(item.status==='ok') statusLabel='✅ 充足';
-    else if(item.status==='need') statusLabel='⚠️ 快沒'+(item.qty?' 剩'+item.qty:'');
-    else statusLabel='❌ 用完';
-    var icon=SCAT[item.cat]||'📦';
-    html+='<div class="scard '+sc+'" data-key="'+item._k+'" data-name="'+item.name+'">'+
-      (shopMode?'':'<button class="scard-del" data-key="'+item._k+'">✕</button>')+
-      '<span class="scard-icon">'+icon+'</span>'+
-      '<div class="scard-name">'+item.name+'</div>'+
-      (item.note?'<div class="scard-note">'+item.note+'</div>':'')+
-      '<div class="scard-status">'+statusLabel+'</div>'+
-    '</div>';
-  });
-  html+='</div>';
-  rows.innerHTML=html;
-
-  // click → open action modal
-  rows.querySelectorAll('.scard').forEach(function(card){
-    card.addEventListener('click',function(e){
-      if(e.target.classList.contains('scard-del'))return;
-      openActionModal(
-        this.getAttribute('data-key'),
-        this.getAttribute('data-name')
-      );
-    });
-  });
-
-  rows.querySelectorAll('.scard-del').forEach(function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      delSupply(this.getAttribute('data-key'));
-    });
-  });
+  save();closeModal('modal-pay');render();
 }
 
-db.ref('supply').on('value',function(snap){
-  renderSupply(snap.val()||{});
-});
+// ── DEBT CRUD ────────────────────────────────────────────────
+function openAddDebt(){
+  document.getElementById('debt-modal-title').textContent='新增負債';
+  document.getElementById('d-id').value='';
+  ['d-name','d-balance','d-paid','d-rate','d-monthly','d-day','d-periods','d-deadline'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});
+  fillTypeSelect('d-type','loan');
+  document.getElementById('d-deadline-grp').style.display='none';
+  openModal('modal-debt');
+}
+function editDebt(id){
+  const d=D.debts.find(x=>x.id===id);if(!d)return;
+  document.getElementById('debt-modal-title').textContent='編輯負債';
+  document.getElementById('d-id').value=id;
+  document.getElementById('d-name').value=d.name;
+  document.getElementById('d-balance').value=d.balance;
+  document.getElementById('d-paid').value=d.paid||0;
+  document.getElementById('d-rate').value=d.rate;
+  document.getElementById('d-monthly').value=d.monthly;
+  document.getElementById('d-day').value=d.day;
+  document.getElementById('d-periods').value=d.periods;
+  document.getElementById('d-deadline').value=d.deadline||'';
+  fillTypeSelect('d-type',d.type);
+  document.getElementById('d-deadline-grp').style.display=d.type==='friend'?'block':'none';
+  openModal('modal-debt');
+}
+function saveDebt(){
+  const name=document.getElementById('d-name').value.trim();
+  const balance=parseFloat(document.getElementById('d-balance').value)||0;
+  if(!name||!balance)return alert('請填寫名稱與餘額');
+  const obj={name,balance,paid:parseFloat(document.getElementById('d-paid').value)||0,rate:parseFloat(document.getElementById('d-rate').value)||0,monthly:parseFloat(document.getElementById('d-monthly').value)||0,day:parseInt(document.getElementById('d-day').value)||0,periods:parseInt(document.getElementById('d-periods').value)||0,type:document.getElementById('d-type').value,deadline:document.getElementById('d-deadline').value||null};
+  const eid=parseInt(document.getElementById('d-id').value);
+  if(eid){const i=D.debts.findIndex(d=>d.id===eid);if(i>-1)D.debts[i]={...D.debts[i],...obj};}
+  else D.debts.push({id:D.nextId++,...obj});
+  save();closeModal('modal-debt');render();
+}
+function onTypeChange(){document.getElementById('d-deadline-grp').style.display=document.getElementById('d-type').value==='friend'?'block':'none';}
+function removeDebt(id){D.debts=D.debts.filter(d=>d.id!==id);save();render();}
 
-document.getElementById('snname').addEventListener('keydown',function(e){if(e.key==='Enter')addSupply();});
-seedSupply();
+function addReceivable(){
+  const name=document.getElementById('r-name').value.trim();
+  const amount=parseFloat(document.getElementById('r-amount').value)||0;
+  if(!name||!amount)return alert('請填寫對象與金額');
+  if(!D.receivables)D.receivables=[];
+  D.receivables.push({id:D.nextId++,name,amount,note:document.getElementById('r-note').value.trim()});
+  save();closeModal('modal-receivable');render();
+}
+function removeReceivable(id){D.receivables=D.receivables.filter(r=>r.id!==id);save();render();}
 
+function addOnetime(){
+  const name=document.getElementById('o-name').value.trim();
+  const amount=parseFloat(document.getElementById('o-amount').value)||0;
+  const date=document.getElementById('o-date').value;
+  if(!name||!amount||!date)return alert('請填寫完整');
+  if(!D.oneTimeExpenses)D.oneTimeExpenses=[];
+  D.oneTimeExpenses.push({id:D.nextId++,name,amount,date,repeat:document.getElementById('o-repeat').value,note:document.getElementById('o-note').value.trim()});
+  save();closeModal('modal-onetime');render();
+  checkAndSendNtfy(name,date,amount);
+}
+function removeOnetime(id){D.oneTimeExpenses=D.oneTimeExpenses.filter(e=>e.id!==id);save();render();}
+function editFixedExpense(id){
+  const e=(D.fixedExpenses||[]).find(x=>x.id===id);if(!e)return;
+  document.getElementById('fe-modal-title').textContent='編輯固定支出';
+  document.getElementById('fe-edit-id').value=id;
+  document.getElementById('fe-name').value=e.name;
+  document.getElementById('fe-amount').value=e.amount;
+  document.getElementById('fe-day').value=e.day||1;
+  document.getElementById('fe-note').value=e.note||'';
+  openModal('modal-fixed');
+}
+function saveFixedExpense(){
+  const name=document.getElementById('fe-name').value.trim();
+  const amount=parseFloat(document.getElementById('fe-amount').value)||0;
+  const day=parseInt(document.getElementById('fe-day').value)||1;
+  const note=document.getElementById('fe-note').value.trim();
+  if(!name||!amount)return alert('請填寫名稱與金額');
+  if(!D.fixedExpenses)D.fixedExpenses=[];
+  const eid=parseInt(document.getElementById('fe-edit-id').value);
+  if(eid){const i=D.fixedExpenses.findIndex(e=>e.id===eid);if(i>-1)D.fixedExpenses[i]={...D.fixedExpenses[i],name,amount,day,note};}
+  else D.fixedExpenses.push({id:D.nextId++,name,amount,day,note});
+  document.getElementById('fe-name').value='';
+  document.getElementById('fe-amount').value='';
+  document.getElementById('fe-day').value='';
+  document.getElementById('fe-note').value='';
+  document.getElementById('fe-edit-id').value='';
+  document.getElementById('fe-modal-title').textContent='新增每月固定支出';
+  save();closeModal('modal-fixed');render();
+}
+function addFixedExpense(){saveFixedExpense();}
+function removeFixedExpense(id){D.fixedExpenses=(D.fixedExpenses||[]).filter(e=>e.id!==id);save();render();}
+
+function addTrade(){
+  const date=document.getElementById('t-date').value;
+  const symbol=document.getElementById('t-symbol').value.trim();
+  const pnl=parseFloat(document.getElementById('t-pnl').value);
+  if(!date||!symbol||isNaN(pnl))return alert('請填寫日期、標的與損益');
+  D.trades.push({id:D.nextId++,date,symbol,pnl,type:document.getElementById('t-type').value,qty:parseInt(document.getElementById('t-qty').value)||0,note:document.getElementById('t-note').value.trim()});
+  save();closeModal('modal-trade');render();
+}
+
+function saveIncome(){} // deprecated, kept for compatibility
+function addExtraIncome(){
+  const name=document.getElementById('ei-name').value.trim();
+  const amount=parseFloat(document.getElementById('ei-amount').value)||0;
+  if(!name||!amount)return alert('請填寫名稱與金額');
+  if(!D.extraIncome)D.extraIncome=[];
+  D.extraIncome.push({id:D.nextId++,name,amount,date:new Date().toISOString().slice(0,10),ts:Date.now()});
+  document.getElementById('ei-name').value='';
+  document.getElementById('ei-amount').value='';
+  save();render();
+}
+function removeExtraIncome(id){removeIncome(id);}
+
+// ── NTFY ─────────────────────────────────────────────────────
+function saveNtfySettings(){
+  D.ntfyTopic=document.getElementById('ntfy-topic').value.trim();
+  D.ntfy7d=document.getElementById('ntfy-7d').checked;
+  D.ntfy3d=document.getElementById('ntfy-3d').checked;
+  D.ntfy1d=document.getElementById('ntfy-1d').checked;
+  save();alert('ntfy 設定已儲存');
+}
+async function sendNtfy(title,msg,priority='default'){
+  const topic=D.ntfyTopic||'shen-debt-20260501-start';
+  try{
+    const r=await fetch(`https://ntfy.sh/${topic}`,{method:'POST',body:msg,headers:{'Title':encodeURIComponent(title),'Priority':priority,'Tags':'bell'}});
+    return r.ok;
+  }catch{return false;}
+}
+async function testNtfy(){
+  setNtfyStatus('idle','發送中...');
+  const ok=await sendNtfy('理債手冊 · 測試通知','ntfy 通知功能正常運作 ✓','default');
+  setNtfyStatus(ok?'ok':'err',ok?'測試通知已送出':'發送失敗，請確認 topic 名稱');
+}
+function setNtfyStatus(state,msg){
+  const dot=document.getElementById('ntfy-dot');const txt=document.getElementById('ntfy-msg');
+  dot.className='ntfy-dot ntfy-'+state;txt.textContent=msg;
+}
+async function checkAndSendNtfy(name,dateStr,amount){
+  const days=daysUntil(dateStr);
+  const triggers=[];
+  if(D.ntfy7d&&days===7)triggers.push('7天後');
+  if(D.ntfy3d&&days===3)triggers.push('3天後');
+  if(D.ntfy1d&&days===1)triggers.push('明天');
+  for(const t of triggers){await sendNtfy(`💳 還款提醒 · ${t}到期`,`${name}\n金額：$${amount.toLocaleString()}\n日期：${dateStr}`,'high');}
+}
+// 每次載入時檢查所有即將到期項目
+async function checkAllNtfy(){
+  const checks=[];
+  D.debts.forEach(d=>{if(d.deadline)checks.push({name:d.name,date:d.deadline,amount:d.balance});});
+  D.debts.filter(d=>d.monthly>0&&d.day>0).forEach(d=>{
+    const now=new Date();const yr=now.getFullYear();const mo=now.getMonth();
+    const dueStr=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d.day).padStart(2,'0')}`;
+    checks.push({name:d.name,date:dueStr,amount:d.monthly});
+  });
+  (D.oneTimeExpenses||[]).forEach(e=>checks.push({name:e.name,date:e.date,amount:e.amount}));
+  for(const c of checks){await checkAndSendNtfy(c.name,c.date,c.amount);}
+}
+
+// ── DATA IO ──────────────────────────────────────────────────
+function updateCfg(){
+  const gid = document.getElementById('settings-gist-id').value.trim();
+  const tok = document.getElementById('settings-token').value.trim();
+  if(gid){ localStorage.setItem('cfg_gist_id', gid); GIST_ID = gid; }
+  if(tok){ localStorage.setItem('cfg_gist_token', tok); GIST_TOKEN = tok; }
+  alert('連線設定已更新');
+}
+function changePassword(){
+  const cur = document.getElementById('pw-current').value;
+  const correct = D.password || 'asd777553';
+  if(cur !== correct) return alert('目前密碼錯誤');
+  const newPw = document.getElementById('pw-new').value;
+  D.password = newPw || '';
+  save();
+  alert(newPw ? '密碼已更新' : '密碼保護已關閉');
+  document.getElementById('pw-current').value = '';
+  document.getElementById('pw-new').value = '';
+}
+function exportData(){const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='理債手冊_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{D=JSON.parse(ev.target.result);save();render();alert('匯入成功');}catch{alert('格式錯誤');}};r.readAsText(f);}
+function clearData(){localStorage.removeItem('debt-v3');D=JSON.parse(JSON.stringify(DEF));save();render();hideCfm('cfm-clear');}
+
+// ── MODAL ────────────────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeOut(e,id){if(e.target.id===id)closeModal(id);}
+function showCfm(id){document.getElementById(id).classList.add('show');}
+function hideCfm(id){const el=document.getElementById(id);if(el)el.classList.remove('show');}
+
+// ── INIT ─────────────────────────────────────────────────────
+document.getElementById('btn-add-debt').onclick=openAddDebt;
+document.getElementById('t-date').value=new Date().toISOString().slice(0,10);
+document.getElementById('o-date').value=new Date().toISOString().slice(0,10);
+document.getElementById('inc-date').value=new Date().toISOString().slice(0,10);
+fillTypeSelect('d-type','loan');
+// show config screen first time, else lock screen
+if(!GIST_ID || !GIST_TOKEN) {
+  document.getElementById('cfg-screen').style.display = 'flex';
+  document.getElementById('cfg-gist-id').value = '626f23a0c209536c37917db72b3edb36';
+} else {
+  document.getElementById('pw-input').focus();
+  (async () => {
+    await loadFromGist();
+    render();
+    setTimeout(checkAllNtfy, 2000);
+  })();
+}
 </script>
-<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});</script>
 </body>
 </html>
