@@ -247,8 +247,8 @@ select.fi{appearance:none}
 <div class="page" id="page-trades">
   <div class="sec-hdr" style="margin-top:4px"><span class="sec-lbl">累計損益</span><button class="btn btn-xs" onclick="openModal('modal-trade')">＋ 新增</button></div>
   <div class="metrics" id="tr-metrics"></div>
-  <div class="card"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">當沖違規</div><div id="tr-violations"></div></div>
-  <div class="card" style="margin-top:8px"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">交易明細</div><div id="tr-list"></div></div>
+  <div class="card"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">交易明細</div><div id="tr-list"></div></div>
+  <div class="card" style="margin-top:8px;border:1.5px solid var(--red);background:rgba(192,57,43,.04)"><div style="font-size:11px;font-weight:500;color:var(--red);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">⚠ 當沖違規紀錄</div><div id="tr-violations"></div></div>
 </div>
 
 <!-- 設定 -->
@@ -385,6 +385,12 @@ select.fi{appearance:none}
   </div>
 </div>
 
+<!-- 圖片放大 -->
+<div id="img-lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:center;justify-content:center;flex-direction:column" onclick="document.getElementById('img-lightbox').style.display='none'">
+  <img id="img-lightbox-src" style="max-width:95vw;max-height:85vh;border-radius:8px;object-fit:contain">
+  <div id="img-lightbox-nav" style="display:flex;gap:16px;margin-top:12px"></div>
+</div>
+
 <!-- Modal: 交易 -->
 <div class="modal-overlay" id="modal-trade" onclick="closeOut(event,'modal-trade')">
   <div class="modal">
@@ -395,11 +401,17 @@ select.fi{appearance:none}
       <div class="fg"><label class="fl">標的</label><input class="fi" id="t-symbol" placeholder="敬鵬期"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">類型</label><select class="fi" id="t-type"><option value="futures">期貨</option><option value="stock">現股</option><option value="violation">當沖違規</option></select></div>
+      <div class="fg"><label class="fl">類型</label><select class="fi" id="t-type"><option value="stock">現股</option><option value="futures">期貨</option><option value="violation">當沖違規</option></select></div>
       <div class="fg"><label class="fl">口數/張數</label><input class="fi" type="number" id="t-qty"></div>
     </div>
     <div class="fg"><label class="fl">損益（虧損填負數）</label><input class="fi" type="number" id="t-pnl"></div>
     <div class="fg"><label class="fl">備註</label><input class="fi" id="t-note" placeholder="選填"></div>
+    <div class="fg">
+      <label class="fl">K棒截圖（最多5張）</label>
+      <input type="file" id="t-images" accept="image/*" multiple style="display:none" onchange="previewTradeImages(event)">
+      <button type="button" class="btn btn-secondary" style="padding:8px;font-size:12px;margin-bottom:8px" onclick="document.getElementById('t-images').click()">📷 上傳截圖</button>
+      <div id="t-image-preview" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
     <button class="btn btn-primary" onclick="addTrade()">新增</button>
   </div>
 </div>
@@ -446,6 +458,7 @@ const DEF = {
     {id:9,date:'2026-04-14',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-100140,note:'當沖違規 #5'},
     {id:10,date:'2026-04-14',symbol:'台指期',type:'futures',qty:1,pnl:14028,note:'台指期獲利'},
     {id:11,date:'2026-04-14',symbol:'敬鵬期貨',type:'futures',qty:12,pnl:-114320,note:'12口全數出清，均價50.9'},
+    {id:12,date:'2026-04-14',symbol:'操盤總損益認列',type:'futures',qty:0,pnl:-9000000,note:'截至2026-04-14累計操盤損失認列'},
   ],
   payLogs:[], nextId:200
 };
@@ -568,10 +581,20 @@ function showPage(id,el){
 
 // ── RENDER ALL ───────────────────────────────────────────────
 function render(){renderOverview();renderIncome();renderDebts();renderCalendar();renderTrades();renderSettings();}
-function togglePaid(key){
+function togglePaid(key, name, amount){
   if(!D.paidItems)D.paidItems={};
-  D.paidItems[key]=!D.paidItems[key];
-  save();renderOverview();
+  const wasPaid=!!D.paidItems[key];
+  D.paidItems[key]=!wasPaid;
+  if(!wasPaid){
+    // 標記為已繳，寫入還款紀錄
+    if(!D.payLogs)D.payLogs=[];
+    D.payLogs.push({id:D.nextId++,debtId:0,debtName:name,amount:amount,note:'待繳打勾',date:new Date().toISOString().slice(0,10),ts:Date.now(),type:'pay'});
+  } else {
+    // 取消打勾，移除最近一筆對應紀錄
+    const idx=D.payLogs.findIndex(l=>l.debtName===name&&l.note==='待繳打勾');
+    if(idx>-1)D.payLogs.splice(idx,1);
+  }
+  save();renderOverview();renderDebts();
 }
 
 // ── INCOME PAGE ──────────────────────────────────────────────
@@ -633,7 +656,9 @@ function renderIncome(){
 
 // ── OVERVIEW ─────────────────────────────────────────────────
 function renderOverview(){
-  const inc=(D.extraIncome||[]).reduce((s,e)=>s+e.amount,0);
+  const now3b=new Date();
+  const curYM2=`${now3b.getFullYear()}-${String(now3b.getMonth()+1).padStart(2,'0')}`;
+  const inc=(D.extraIncome||[]).filter(e=>e.date&&e.date.slice(0,7)===curYM2).reduce((s,e)=>s+e.amount,0);
   const totalDebt=D.debts.reduce((s,d)=>s+d.balance,0);
   const mDebt=D.debts.filter(d=>d.monthly>0).reduce((s,d)=>s+d.monthly,0);
   const mFixed=(D.fixedExpenses||[]).reduce((s,e)=>s+e.amount,0);
@@ -672,7 +697,7 @@ function renderOverview(){
   const alertsHtml=billItems.length?billItems.map(item=>{
     const paid=!!(D.paidItems||{})[item.key];
     return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);${paid?'opacity:.4':''}">
-      <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${item.color};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:${paid?item.color:'transparent'}" onclick="togglePaid('${item.key}')">
+      <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${item.color};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:${paid?item.color:'transparent'}" onclick="togglePaid('${item.key}','${item.name}',${item.amount})">
         ${paid?'<span style="color:#fff;font-size:12px;line-height:1">✓</span>':''}
       </div>
       <div style="flex:1;min-width:0">
@@ -684,8 +709,10 @@ function renderOverview(){
   }).join(''):'<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px 0">本月無待繳項目</div>';
   document.getElementById('ov-alerts').innerHTML=alertsHtml;
   // cashflow
-  const incLogs=(D.extraIncome||[]).sort((a,b)=>(b.ts||0)-(a.ts||0));
-  let cf=incLogs.length?incLogs.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join(''):`<div class="cf-row"><span style="color:var(--text3);font-size:12px">尚無收入紀錄</span><span></span></div>`;
+  const now3=new Date();
+  const curYM=`${now3.getFullYear()}-${String(now3.getMonth()+1).padStart(2,'0')}`;
+  const thisMonthInc=(D.extraIncome||[]).filter(e=>e.date&&e.date.slice(0,7)===curYM).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  let cf=thisMonthInc.length?thisMonthInc.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join(''):`<div class="cf-row"><span style="color:var(--text3);font-size:12px">本月尚無收入紀錄</span><span></span></div>`;
   D.debts.filter(d=>d.monthly>0).forEach(d=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${d.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-d.monthly)}</span></div>`;});
   (D.fixedExpenses||[]).forEach(e=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-e.amount)}</span></div>`;});
   cf+=`<div class="cf-total"><span>固定後結餘</span><span style="font-family:var(--mono);color:var(--${cc(bal)})">${fmt(bal)}</span></div>`;
@@ -858,7 +885,11 @@ function renderTrades(){
     <div class="trade-row"><div class="trade-hdr"><span class="trade-name red">第${i+1}次 — ${v.symbol}</span><span style="font-family:var(--mono);font-size:12px;color:var(--red)">${fmt(v.pnl)}</span></div><div class="trade-sub">${v.date} ／ ${v.qty}張 ／ ${v.note}</div></div>`).join('')||'<div class="empty">暫無違規</div>';
   const tl={futures:'期貨',stock:'現股',violation:'⚠ 當沖'};
   document.getElementById('tr-list').innerHTML=[...D.trades].sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`
-    <div class="trade-row"><div class="trade-hdr"><span class="trade-name ${t.type==='violation'?'red':''}">${t.symbol}</span><span style="font-family:var(--mono);font-size:12px;color:var(--${cc(t.pnl)})">${fmt(t.pnl)}</span></div><div class="trade-sub">${t.date} ／ ${tl[t.type]||t.type} ／ ${t.qty}口/張${t.note?' ／ '+t.note:''}</div></div>`).join('');
+    <div class="trade-row">
+      <div class="trade-hdr"><span class="trade-name ${t.type==='violation'?'red':''}">${t.symbol}</span><span style="font-family:var(--mono);font-size:12px;color:var(--${cc(t.pnl)})">${fmt(t.pnl)}</span></div>
+      <div class="trade-sub">${t.date} ／ ${tl[t.type]||t.type} ／ ${t.qty}口/張${t.note?' ／ '+t.note:''}</div>
+      ${t.images&&t.images.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${t.images.map((img,i)=>`<img src="${img}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="viewTradeImage('${t.id}',${i})" title="點擊放大">`).join('')}</div>`:''}
+    </div>`).join('');
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────
@@ -1019,12 +1050,41 @@ function saveFixedExpense(){
 function addFixedExpense(){saveFixedExpense();}
 function removeFixedExpense(id){D.fixedExpenses=(D.fixedExpenses||[]).filter(e=>e.id!==id);save();render();}
 
+let tradeImageData = [];
+function previewTradeImages(event){
+  const files = Array.from(event.target.files).slice(0,5);
+  const preview = document.getElementById('t-image-preview');
+  tradeImageData = [];
+  preview.innerHTML = '';
+  files.forEach((file,i)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      tradeImageData[i] = e.target.result;
+      const img = document.createElement('div');
+      img.style.cssText = 'position:relative;width:60px;height:60px';
+      img.innerHTML = `<img src="${e.target.result}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+        <button onclick="removeTradeImage(${i})" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:10px;cursor:pointer;line-height:16px;text-align:center">×</button>`;
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function removeTradeImage(idx){
+  tradeImageData[idx]=null;
+  const preview=document.getElementById('t-image-preview');
+  const items=preview.children;
+  if(items[idx])items[idx].style.opacity='0.3';
+}
 function addTrade(){
   const date=document.getElementById('t-date').value;
   const symbol=document.getElementById('t-symbol').value.trim();
   const pnl=parseFloat(document.getElementById('t-pnl').value);
   if(!date||!symbol||isNaN(pnl))return alert('請填寫日期、標的與損益');
-  D.trades.push({id:D.nextId++,date,symbol,pnl,type:document.getElementById('t-type').value,qty:parseInt(document.getElementById('t-qty').value)||0,note:document.getElementById('t-note').value.trim()});
+  const images=tradeImageData.filter(Boolean).slice(0,5);
+  D.trades.push({id:D.nextId++,date,symbol,pnl,type:document.getElementById('t-type').value,qty:parseInt(document.getElementById('t-qty').value)||0,note:document.getElementById('t-note').value.trim(),images});
+  tradeImageData=[];
+  document.getElementById('t-image-preview').innerHTML='';
+  document.getElementById('t-images').value='';
   save();closeModal('modal-trade');render();
 }
 
@@ -1114,6 +1174,15 @@ function updateCfg(){
   alert('連線設定已更新');
 }
 
+function viewTradeImage(tradeId, imgIdx){
+  const t=D.trades.find(x=>x.id===parseInt(tradeId));
+  if(!t||!t.images)return;
+  const lb=document.getElementById('img-lightbox');
+  document.getElementById('img-lightbox-src').src=t.images[imgIdx];
+  const nav=document.getElementById('img-lightbox-nav');
+  nav.innerHTML=t.images.map((img,i)=>`<div style="width:10px;height:10px;border-radius:50%;background:${i===imgIdx?'#fff':'rgba(255,255,255,0.4)'};cursor:pointer" onclick="event.stopPropagation();viewTradeImage(${tradeId},${i})"></div>`).join('');
+  lb.style.display='flex';
+}
 function exportData(){const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='理債手冊_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{D=JSON.parse(ev.target.result);save();render();alert('匯入成功');}catch{alert('格式錯誤');}};r.readAsText(f);}
 function clearData(){localStorage.removeItem('debt-v3');D=JSON.parse(JSON.stringify(DEF));save();render();hideCfm('cfm-clear');}
