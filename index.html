@@ -9,6 +9,18 @@
 const GIST_FILE = 'debt-data.json';
 let GIST_ID = localStorage.getItem('cfg_gist_id') || '';
 let GIST_TOKEN = localStorage.getItem('cfg_gist_token') || '';
+function saveCfg() {
+  const gid = document.getElementById('cfg-gist-id').value.trim();
+  const tok = document.getElementById('cfg-token').value.trim();
+  if(!gid || !tok) { alert('請填寫 Gist ID 和 Token'); return; }
+  localStorage.setItem('cfg_gist_id', gid);
+  localStorage.setItem('cfg_gist_token', tok);
+  GIST_ID = gid; GIST_TOKEN = tok;
+  document.getElementById('cfg-screen').style.display = 'none';
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.getElementById('pw-input').focus();
+  loadFromGist().then(()=>render());
+}
 </script>
 <style>
 :root{--bg:#f2f1ef;--bg2:#fff;--bg3:#eae9e5;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);--text:#1a1a1a;--text2:#555;--text3:#aaa;--red:#c0392b;--green:#1e7e4a;--yellow:#9a6800;--blue:#1a6fbf;--mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif}
