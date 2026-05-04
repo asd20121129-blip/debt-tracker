@@ -986,7 +986,6 @@ function addOnetime(){
   if(!D.oneTimeExpenses)D.oneTimeExpenses=[];
   D.oneTimeExpenses.push({id:D.nextId++,name,amount,date,repeat:document.getElementById('o-repeat').value,note:document.getElementById('o-note').value.trim()});
   save();closeModal('modal-onetime');render();
-  checkAndSendNtfy(name,date,amount);
 }
 function removeOnetime(id){D.oneTimeExpenses=D.oneTimeExpenses.filter(e=>e.id!==id);save();render();}
 function editFixedExpense(id){
@@ -1053,7 +1052,7 @@ function saveNtfySettings(){
 async function sendNtfy(title,msg,priority='default'){
   const topic=D.ntfyTopic||'shen-debt-20260501-start';
   try{
-    const r=await fetch(`https://ntfy.sh/${topic}`,{method:'POST',body:msg,headers:{'Title':encodeURIComponent(title),'Priority':priority,'Tags':'bell'}});
+    const r=await fetch(`https://ntfy.sh/${topic}`,{method:'POST',body:msg,headers:{'Title':title,'Priority':priority,'Tags':'bell','Content-Type':'text/plain; charset=utf-8'}});
     return r.ok;
   }catch{return false;}
 }
@@ -1076,6 +1075,11 @@ async function checkAndSendNtfy(name,dateStr,amount){
 }
 // 每次載入時檢查所有即將到期項目
 async function checkAllNtfy(){
+  const todayStr=new Date().toISOString().slice(0,10);
+  if(localStorage.getItem('ntfy-last-run')===todayStr)return;
+  localStorage.setItem('ntfy-last-run',todayStr);
+  const sentKey='ntfy-sent-'+todayStr;
+  const alreadySent=JSON.parse(localStorage.getItem(sentKey)||'[]');
   const checks=[];
   D.debts.forEach(d=>{if(d.deadline)checks.push({name:d.name,date:d.deadline,amount:d.balance});});
   D.debts.filter(d=>d.monthly>0&&d.day>0).forEach(d=>{
@@ -1084,7 +1088,21 @@ async function checkAllNtfy(){
     checks.push({name:d.name,date:dueStr,amount:d.monthly});
   });
   (D.oneTimeExpenses||[]).forEach(e=>checks.push({name:e.name,date:e.date,amount:e.amount}));
-  for(const c of checks){await checkAndSendNtfy(c.name,c.date,c.amount);}
+  for(const item of checks){
+    const days=daysUntil(item.date);
+    const triggers=[];
+    if(D.ntfy7d&&days===7)triggers.push('7天後到期');
+    if(D.ntfy3d&&days===3)triggers.push('3天後到期');
+    if(D.ntfy1d&&days===1)triggers.push('明天到期');
+    for(const t of triggers){
+      const key=item.name+'-'+t+'-'+todayStr;
+      if(alreadySent.includes(key))continue;
+      const ok=await sendNtfy(`💳 ${t}`,`${item.name}
+金額：$${Math.round(item.amount).toLocaleString()}
+日期：${item.date}`,'high');
+      if(ok){alreadySent.push(key);localStorage.setItem(sentKey,JSON.stringify(alreadySent));}
+    }
+  }
 }
 
 // ── DATA IO ──────────────────────────────────────────────────
