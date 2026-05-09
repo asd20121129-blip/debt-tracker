@@ -226,14 +226,9 @@ select.fi{appearance:none}
     <button class="btn btn-secondary" style="margin-top:10px;padding:9px;font-size:12px" onclick="manualSync().then(()=>render())">立即同步</button>
   </div>
   <div class="card">
-    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">每月固定支出</div>
-    <div id="cal-fixed-settings"></div>
-    <button class="btn btn-xs" style="margin-top:8px" onclick="openModal('modal-fixed')">＋ 新增固定支出</button>
-  </div>
-  <div class="card">
     <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">定期支出</div>
-    <div id="cal-onetime-settings"></div>
-    <button class="btn btn-xs" style="margin-top:8px" onclick="openModal('modal-onetime')">＋ 新增定期支出</button>
+    <div id="expense-settings"></div>
+    <button class="btn btn-xs" style="margin-top:8px" onclick="openModal('modal-expense')">＋ 新增定期支出</button>
   </div>
   <div class="card">
     <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">通知設定（ntfy）</div>
@@ -439,12 +434,14 @@ const DEF = {
     {id:108,name:'9號薪資',amount:31304,date:'2026-01-09',ts:1736380800000},
   ],
   receivables:[{id:1,name:'寶子',amount:200000,note:'借出款項'}],
-  oneTimeExpenses:[
-    {id:1,name:'儲蓄險',amount:60435,date:'2027-01-05',repeat:'yearly',note:'已繳9年'},
-    {id:2,name:'國泰保險',amount:28271,date:'2026-05-11',repeat:'yearly',note:'永豐大戶扣款'},
-    {id:4,name:'家人會錢（標會）',amount:5200,date:'2026-05-20',repeat:'monthly',note:'每月20號，2026-07-20到期'},
+  payLogs:[],
+  expenses:[
+    {id:1,name:'儲蓄險',amount:60435,frequency:'yearly',date:'2027-01-05',day:5,account:'',note:'已繳9年'},
+    {id:2,name:'國泰保險',amount:28271,frequency:'yearly',date:'2026-05-11',day:11,account:'永豐大戶',note:''},
+    {id:3,name:'家人會錢（標會）',amount:5200,frequency:'monthly',date:'2026-05-20',day:20,account:'',note:'每月20號，2026-07-20到期'},
+    {id:4,name:'癌症保險',amount:470,frequency:'monthly',date:'',day:1,account:'',note:''},
   ],
-  fixedExpenses:[{id:2,name:'癌症保險',amount:470,day:1,note:''}],
+  accountHistory:['永豐銀行','永豐大戶','中信','富邦','連線','中租匯款','三商美邦匯款'],
   trades:[],
   payLogs:[], paidItems:{}, nextId:200
 };
@@ -682,8 +679,8 @@ function renderOverview(){
   const inc=(D.extraIncome||[]).filter(e=>e.date&&e.date.slice(0,7)===curYM).reduce((s,e)=>s+e.amount,0);
   const totalDebt=D.debts.reduce((s,d)=>s+d.balance,0);
   const mDebt=D.debts.filter(d=>d.monthly>0).reduce((s,d)=>s+d.monthly,0);
-  const mFixed=(D.fixedExpenses||[]).reduce((s,e)=>s+e.amount,0);
-  const bal=inc-mDebt-mFixed;
+  const mExpense=(D.expenses||[]).filter(e=>e.frequency==='monthly').reduce((s,e)=>s+e.amount,0);
+  const bal=inc-mDebt-mExpense;
   const tPnl=D.trades.reduce((s,t)=>s+t.pnl,0);
   document.getElementById('ov-metrics').innerHTML=`
     <div class="metric"><div class="metric-lbl">總負債</div><div class="metric-val red">-$${Math.round(totalDebt).toLocaleString()}</div></div>
@@ -699,17 +696,17 @@ function renderOverview(){
     const key=`debt-${d.id}-${monthKey}`;
     billItems.push({key,name:d.name,amount:d.monthly,day:d.day,type:'debt',color:'var(--blue)'});
   });
-  (D.fixedExpenses||[]).forEach(e=>{
-    const key=`fe-${e.id}-${monthKey}`;
-    billItems.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'fixed',color:'var(--blue)'});
+  (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{
+    const key=`exp-${e.id}-${monthKey}`;
+    billItems.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'expense',color:'var(--blue)'});
   });
   D.debts.filter(d=>d.deadline).forEach(d=>{
     const days=daysUntil(d.deadline);
     if(days>=0&&days<=60){const key=`deadline-${d.id}`;billItems.push({key,name:d.name+' 到期',amount:d.balance,day:parseInt((d.deadline||'').split('-')[2])||0,type:'deadline',color:'var(--red)'});}
   });
-  (D.oneTimeExpenses||[]).forEach(e=>{
+  (D.expenses||[]).filter(e=>e.frequency==='yearly').forEach(e=>{
     const days=daysUntil(e.date);
-    if(days>=0&&days<=60){const key=`ot-${e.id}`;billItems.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'onetime',color:'var(--yellow)'});}
+    if(days>=0&&days<=60){const key=`exp-${e.id}`;billItems.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'expense',color:'var(--yellow)'});}
   });
   billItems.sort((a,b)=>a.day-b.day);
 
@@ -721,7 +718,7 @@ function renderOverview(){
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;${paid?'text-decoration:line-through;color:var(--text3)':''}">${item.name}</div>
-        <div style="font-size:11px;color:var(--text3)">${item.day?item.day+'號':''}${item.type==='deadline'?' 到期':item.type==='onetime'?' 大額支出':' 還款'}</div>
+        <div style="font-size:11px;color:var(--text3)">${item.day?item.day+'號':''}${item.type==='deadline'?' 到期':item.type==='expense'?' 定期支出':' 還款'}</div>
       </div>
       <span style="font-family:var(--mono);font-size:12px;color:var(--red);white-space:nowrap">-$${Math.round(item.amount).toLocaleString()}</span>
     </div>`;
@@ -733,7 +730,7 @@ function renderOverview(){
     ?thisMonthInc.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join('')
     :`<div class="cf-row"><span style="color:var(--text3);font-size:12px">本月尚無收入紀錄</span><span></span></div>`;
   D.debts.filter(d=>d.monthly>0).forEach(d=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${d.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-d.monthly)}</span></div>`;});
-  (D.fixedExpenses||[]).forEach(e=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-e.amount)}</span></div>`;});
+  (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-e.amount)}</span></div>`;});
   cf+=`<div class="cf-total"><span>固定後結餘</span><span style="font-family:var(--mono);color:var(--${cc(bal)})">${fmt(bal)}</span></div>`;
   document.getElementById('ov-cashflow').innerHTML=cf;
 
