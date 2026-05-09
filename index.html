@@ -5,11 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>理債手冊</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script>
-const GIST_FILE = 'debt-data.json';
-let GIST_ID = localStorage.getItem('cfg_gist_id') || '';
-let GIST_TOKEN = localStorage.getItem('cfg_gist_token') || '';
-</script>
+
 <style>
 :root{--bg:#f2f1ef;--bg2:#fff;--bg3:#eae9e5;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);--text:#1a1a1a;--text2:#555;--text3:#aaa;--red:#c0392b;--green:#1e7e4a;--yellow:#9a6800;--blue:#1a6fbf;--mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -220,21 +216,14 @@ select.fi{appearance:none}
   <div class="sec-hdr" style="margin-top:4px"><span class="sec-lbl">累計損益</span><button class="btn btn-xs" onclick="openModal('modal-trade')">＋ 新增</button></div>
   <div class="metrics" id="tr-metrics"></div>
   <div class="card"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">交易明細</div><div id="tr-list"></div></div>
-  <div class="card" style="margin-top:8px;border:1.5px solid var(--red);background:rgba(192,57,43,.04)"><div style="font-size:11px;font-weight:500;color:var(--red);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">⚠ 當沖違規紀錄</div><div id="tr-violations"></div></div>
 </div>
 
 <!-- 設定 -->
 <div class="page" id="page-settings">
   <div class="card" style="margin-top:4px">
-    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">雲端同步（多裝置共享）</div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.7">設定後，手機與電腦使用同一組 Gist ID + Token 即可同步資料。</div>
-    <div class="fg"><label class="fl">Gist ID</label><input class="fi" id="settings-gist-id" placeholder="626f23a0..." style="font-family:monospace;font-size:12px"></div>
-    <div class="fg"><label class="fl">GitHub Token</label><input class="fi" type="password" id="settings-token" placeholder="ghp_..." style="font-family:monospace;font-size:12px"></div>
-    <div style="display:flex;gap:6px">
-      <button class="btn btn-primary" style="flex:1;padding:9px;font-size:12px" onclick="saveGistSettings()">儲存並同步</button>
-      <button class="btn btn-secondary" style="flex:1;padding:9px;font-size:12px" onclick="manualSync()">立即同步</button>
-    </div>
-    <div id="gist-status" style="font-size:11px;color:var(--text2);margin-top:8px;min-height:16px"></div>
+    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px">雲端同步</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8">使用 Firebase 自動同步，開啟即同步，手機電腦共享資料。</div>
+    <button class="btn btn-secondary" style="margin-top:10px;padding:9px;font-size:12px" onclick="manualSync().then(()=>render())">立即同步</button>
   </div>
   <div class="card">
     <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">每月固定支出</div>
@@ -242,9 +231,9 @@ select.fi{appearance:none}
     <button class="btn btn-xs" style="margin-top:8px" onclick="openModal('modal-fixed')">＋ 新增固定支出</button>
   </div>
   <div class="card">
-    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">大額支出</div>
+    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">定期支出</div>
     <div id="cal-onetime-settings"></div>
-    <button class="btn btn-xs" style="margin-top:8px" onclick="openModal('modal-onetime')">＋ 新增大額支出</button>
+    <button class="btn btn-xs" style="margin-top:8px" onclick="openModal('modal-onetime')">＋ 新增定期支出</button>
   </div>
   <div class="card">
     <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">通知設定（ntfy）</div>
@@ -388,14 +377,31 @@ select.fi{appearance:none}
     <div class="modal-title">新增交易紀錄</div>
     <div class="fr">
       <div class="fg"><label class="fl">日期</label><input class="fi" type="date" id="t-date"></div>
-      <div class="fg"><label class="fl">標的</label><input class="fi" id="t-symbol" placeholder="敬鵬期"></div>
+      <div class="fg">
+        <label class="fl">標的</label>
+        <input class="fi" id="t-symbol" placeholder="台指期" list="symbol-list">
+        <datalist id="symbol-list"></datalist>
+      </div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">類型</label><select class="fi" id="t-type"><option value="stock">現股</option><option value="futures">期貨</option><option value="violation">當沖違規</option></select></div>
+      <div class="fg"><label class="fl">類型</label><select class="fi" id="t-type"><option value="stock">現股</option><option value="stock-futures">股期</option><option value="index-large">台指大</option><option value="index-mini">台指小</option><option value="index-micro">台指微</option></select></div>
       <div class="fg"><label class="fl">口數/張數</label><input class="fi" type="number" id="t-qty"></div>
     </div>
     <div class="fg"><label class="fl">損益（虧損填負數）</label><input class="fi" type="number" id="t-pnl"></div>
+    <div class="fg">
+      <label class="fl">三色標記</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+        <button type="button" id="mark-green" onclick="selectMark('green')" style="padding:8px 4px;font-size:12px;border:1.5px solid var(--border2);border-radius:7px;background:var(--bg3);cursor:pointer;font-family:var(--sans)">🟩 照SOP</button>
+        <button type="button" id="mark-yellow" onclick="selectMark('yellow')" style="padding:8px 4px;font-size:12px;border:1.5px solid var(--border2);border-radius:7px;background:var(--bg3);cursor:pointer;font-family:var(--sans)">🟨 細節誤</button>
+        <button type="button" id="mark-red" onclick="selectMark('red')" style="padding:8px 4px;font-size:12px;border:1.5px solid var(--border2);border-radius:7px;background:var(--bg3);cursor:pointer;font-family:var(--sans)">🟥 憑感覺</button>
+      </div>
+      <input type="hidden" id="t-mark" value="">
+    </div>
     <div class="fg"><label class="fl">備註</label><input class="fi" id="t-note" placeholder="選填"></div>
+    <div class="fg">
+      <label class="fl">檢討（哪邊沒做好？重來會在哪個點做不同決定？）</label>
+      <textarea class="fi" id="t-review" rows="3" placeholder="進場SOP依據？哪邊沒做好？重來一次，我會在哪個具體的點做不一樣的決定？" style="resize:none;line-height:1.6"></textarea>
+    </div>
     <div class="fg">
       <label class="fl">K棒截圖（最多5張）</label>
       <input type="file" id="t-images" accept="image/*" multiple style="display:none" onchange="previewTradeImages(event)">
@@ -409,16 +415,18 @@ select.fi{appearance:none}
 <script>
 // ── DEFAULT DATA ──────────────────────────────────────────────────────────────
 const DEF = {
-  customTypes:[],
-  ntfyTopic:'shen-debt-20260501-start', ntfy7d:true, ntfy3d:true, ntfy1d:false,
+  customTypes:['二胎'],
+  ntfyTopic:'shen-debt-2026', ntfy7d:true, ntfy3d:true, ntfy1d:false,
+  historicalPnl:-10000000,
   debts:[
     {id:1,name:'連線銀行信貸',balance:2185304,paid:0,rate:3.68,monthly:21794,day:20,periods:120,type:'loan',deadline:null},
     {id:2,name:'台北富邦信貸',balance:431407,paid:0,rate:4.2,monthly:6330,day:21,periods:78,type:'loan',deadline:null},
+    {id:8,name:'中租車貸',balance:570000,paid:0,rate:11.08,monthly:10598,day:6,periods:60,type:'c_二胎',deadline:null},
+    {id:9,name:'三商美邦保單借款',balance:430000,paid:0,rate:3.5,monthly:1254,day:8,periods:0,type:'loan',deadline:null},
     {id:3,name:'永豐信用卡預借現金',balance:20000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null},
     {id:4,name:'中信信用卡預借現金',balance:17000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null},
     {id:5,name:'朋友 JY',balance:50000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01'},
     {id:6,name:'朋友 IVY',balance:30000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01'},
-    {id:7,name:'家人會錢',balance:15600,paid:0,rate:0,monthly:5200,day:20,periods:3,type:'friend',deadline:'2026-07-20'},
   ],
   extraIncome:[
     {id:101,name:'24號薪資',amount:62885,date:'2026-04-24',ts:1745452800000},
@@ -434,26 +442,15 @@ const DEF = {
   oneTimeExpenses:[
     {id:1,name:'儲蓄險',amount:60435,date:'2027-01-05',repeat:'yearly',note:'已繳9年'},
     {id:2,name:'國泰保險',amount:28271,date:'2026-05-11',repeat:'yearly',note:'永豐大戶扣款'},
+    {id:4,name:'家人會錢（標會）',amount:5200,date:'2026-05-20',repeat:'monthly',note:'每月20號，2026-07-20到期'},
   ],
   fixedExpenses:[{id:2,name:'癌症保險',amount:470,day:1,note:''}],
-  trades:[
-    {id:1,date:'2026-04-07',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-20192,note:'當沖違規 #1'},
-    {id:2,date:'2026-04-07',symbol:'敬鵬期貨',type:'futures',qty:8,pnl:-44672,note:'減碼8口'},
-    {id:3,date:'2026-04-08',symbol:'敬鵬期+小台',type:'futures',qty:15,pnl:-33670,note:'減碼12口+小台獲利'},
-    {id:4,date:'2026-04-09',symbol:'金像現股',type:'violation',qty:40,pnl:-119148,note:'當沖違規 #2'},
-    {id:5,date:'2026-04-09',symbol:'期貨綜合',type:'futures',qty:52,pnl:79898,note:'小台25口+微台19口+敬鵬8口（稅後）'},
-    {id:6,date:'2026-04-10',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-4342,note:'當沖違規 #3'},
-    {id:7,date:'2026-04-10',symbol:'期貨綜合',type:'futures',qty:12,pnl:-68470,note:'南亞+敬鵬+小台（稅後）'},
-    {id:8,date:'2026-04-13',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-60251,note:'當沖違規 #4'},
-    {id:9,date:'2026-04-14',symbol:'敬鵬現股',type:'violation',qty:40,pnl:-100140,note:'當沖違規 #5'},
-    {id:10,date:'2026-04-14',symbol:'台指期',type:'futures',qty:1,pnl:14028,note:'台指期獲利'},
-    {id:11,date:'2026-04-14',symbol:'敬鵬期貨',type:'futures',qty:12,pnl:-114320,note:'12口全數出清，均價50.9'},
-    {id:12,date:'2026-04-14',symbol:'操盤總損益認列',type:'futures',qty:0,pnl:-9000000,note:'截至2026-04-14累計操盤損失認列'},
-  ],
+  trades:[],
   payLogs:[], paidItems:{}, nextId:200
 };
 
-// ── GIST SYNC ─────────────────────────────────────────────────────────────────
+// ── FIREBASE SYNC ─────────────────────────────────────────────────────────────
+const FB_URL = 'https://eatwhat-49d7b-default-rtdb.asia-southeast1.firebasedatabase.app/debt.json';
 let D = JSON.parse(JSON.stringify(DEF));
 let syncTimer = null;
 
@@ -466,38 +463,41 @@ function setSyncStatus(state, msg) {
   msgEl.textContent=msg;
 }
 
-async function loadFromGist() {
+async function loadFromFirebase() {
   try {
     setSyncStatus('syncing','載入中...');
-    const resp=await fetch(`https://api.github.com/gists/${GIST_ID}`,{headers:{'Authorization':`token ${GIST_TOKEN}`,'Accept':'application/vnd.github.v3+json'}});
-    if(!resp.ok)throw new Error();
-    const gist=await resp.json();
-    const content=gist.files[GIST_FILE]?.content;
-    if(!content)throw new Error();
-    const parsed=JSON.parse(content);
-    if(!parsed.paidItems)parsed.paidItems={};
-    if(!parsed.customTypes)parsed.customTypes=[];
-    if(!parsed.extraIncome)parsed.extraIncome=[];
-    if(!parsed.payLogs)parsed.payLogs=[];
+    const resp = await fetch(FB_URL);
+    if(!resp.ok) throw new Error();
+    const parsed = await resp.json();
+    if(!parsed) throw new Error('empty');
+    if(!parsed.paidItems) parsed.paidItems={};
+    if(!parsed.customTypes) parsed.customTypes=[];
+    if(!parsed.extraIncome) parsed.extraIncome=[];
+    if(!parsed.payLogs) parsed.payLogs=[];
+    if(!parsed.debts) parsed.debts=[];
     parsed.debts.forEach(d=>{if(d.paid===undefined)d.paid=0;});
-    D=parsed;
-    localStorage.setItem('debt-v3',JSON.stringify(D));
+    D = parsed;
+    localStorage.setItem('debt-v3', JSON.stringify(D));
     setSyncStatus('ok','已同步 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
     return true;
   } catch(e) {
-    const local=localStorage.getItem('debt-v3');
+    const local = localStorage.getItem('debt-v3');
     if(local){try{D=JSON.parse(local);}catch{}}
     setSyncStatus('err','雲端載入失敗，使用本機資料');
     return false;
   }
 }
 
-async function saveToGist() {
+async function saveToFirebase() {
   try {
     setSyncStatus('syncing','儲存中...');
-    localStorage.setItem('debt-v3',JSON.stringify(D));
-    const resp=await fetch(`https://api.github.com/gists/${GIST_ID}`,{method:'PATCH',headers:{'Authorization':`token ${GIST_TOKEN}`,'Content-Type':'application/json'},body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(D,null,2)}}})});
-    if(!resp.ok)throw new Error();
+    localStorage.setItem('debt-v3', JSON.stringify(D));
+    const resp = await fetch(FB_URL, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(D)
+    });
+    if(!resp.ok) throw new Error();
     setSyncStatus('ok','已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
   } catch(e) {
     setSyncStatus('err','雲端儲存失敗，已存本機');
@@ -505,8 +505,8 @@ async function saveToGist() {
 }
 
 function load(){try{const r=localStorage.getItem('debt-v3');return r?JSON.parse(r):JSON.parse(JSON.stringify(DEF));}catch{return JSON.parse(JSON.stringify(DEF));}}
-function save(){localStorage.setItem('debt-v3',JSON.stringify(D));clearTimeout(syncTimer);syncTimer=setTimeout(()=>saveToGist(),1500);}
-async function manualSync(){await loadFromGist();render();}
+function save(){localStorage.setItem('debt-v3',JSON.stringify(D));clearTimeout(syncTimer);syncTimer=setTimeout(()=>saveToFirebase(),1500);}
+async function manualSync(){await loadFromFirebase();render();}
 
 D=load();
 if(!D.customTypes)D.customTypes=[];
@@ -530,7 +530,15 @@ const nowYM=()=>{const n=new Date();return `${n.getFullYear()}-${String(n.getMon
 const BT=[{v:'loan',l:'信貸'},{v:'card',l:'信用卡'},{v:'friend',l:'親友'}];
 function allTypes(){return[...BT,...(D.customTypes||[]).map(t=>({v:'c_'+t,l:t}))];};
 function tLabel(v){const t=allTypes().find(x=>x.v===v);return t?t.l:v;}
-function tColor(v){return v==='loan'?'#1a6fbf':v==='card'?'#c0392b':v==='friend'?'#9a6800':'#aaa';}
+function tColor(v){return v==='loan'?'#1a6fbf':v==='card'?'#c0392b':v==='friend'?'#9a6800':'#888';}
+function tGroupLabel(v){
+  if(v==='loan')return '🏦 信貸';
+  if(v==='card')return '💳 信用卡';
+  if(v==='friend')return '👤 親友';
+  // 自訂類型移除 c_ 前綴
+  const label=v.startsWith('c_')?v.slice(2):v;
+  return '📌 '+label;
+}
 function fillTypeSelect(id,val){const s=document.getElementById(id);s.innerHTML=allTypes().map(t=>`<option value="${t.v}"${t.v===val?' selected':''}>${t.l}</option>`).join('');}
 function addCustomType(){const v=document.getElementById('new-type-input').value.trim();if(!v||D.customTypes.includes(v))return;D.customTypes.push(v);save();renderSettings();}
 function removeCustomType(t){D.customTypes=D.customTypes.filter(x=>x!==t);save();renderSettings();}
@@ -542,22 +550,28 @@ function showPage(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el)el.classList.add('active');
   render();
-  if(id==='settings')renderGistSettings();
 }
 
-function render(){renderOverview();renderIncome();renderDebts();renderTrades();renderSettings();}
+function render(){renderOverview();renderIncome();renderDebts();renderTrades();renderSettings();updateSymbolList();}
 
 // ── TOGGLE PAID ───────────────────────────────────────────────────────────────
 function togglePaid(key,name,amount){
   if(!D.paidItems)D.paidItems={};
   const wasPaid=!!D.paidItems[key];
   D.paidItems[key]=!wasPaid;
-  if(!wasPaid){
-    if(!D.payLogs)D.payLogs=[];
-    D.payLogs.push({id:D.nextId++,debtId:0,debtName:name,amount:amount,note:'待繳打勾',date:new Date().toISOString().slice(0,10),ts:Date.now(),type:'pay'});
-  } else {
-    const idx=D.payLogs.findIndex(l=>l.debtName===name&&l.note==='待繳打勾');
-    if(idx>-1)D.payLogs.splice(idx,1);
+  
+  // 找到對應負債，累計已還款金額
+  const debt=D.debts.find(d=>d.name===name);
+  if(debt){
+    if(!wasPaid){
+      debt.paid=(debt.paid||0)+amount;
+      if(!D.payLogs)D.payLogs=[];
+      D.payLogs.push({id:D.nextId++,debtId:debt.id,debtName:name,amount:amount,note:'已繳',date:new Date().toISOString().slice(0,10),ts:Date.now(),type:'pay'});
+    } else {
+      debt.paid=Math.max(0,(debt.paid||0)-amount);
+      const idx=D.payLogs.findIndex(l=>l.debtName===name&&l.note==='已繳'&&l.amount===amount);
+      if(idx>-1)D.payLogs.splice(idx,1);
+    }
   }
   save();renderOverview();renderDebts();
 }
@@ -761,7 +775,6 @@ function renderDebts(){
   });
 
   const groupLabels={loan:'🏦 信貸',card:'💳 信用卡',friend:'👤 親友'};
-  const groupColors={loan:'var(--blue)',card:'var(--red)',friend:'var(--yellow)'};
 
   function renderDebtItem(d,isFirst,isLast){
     const tot=d.paid+d.balance;
@@ -828,10 +841,10 @@ function renderDebts(){
 
   const dl=document.getElementById('debts-list');
   dl.innerHTML=
-    renderGroup('loan',groupLabels.loan,groupColors.loan,groups.loan)+
-    renderGroup('card',groupLabels.card,groupColors.card,groups.card)+
-    renderGroup('friend',groupLabels.friend,groupColors.friend,groups.friend)+
-    Object.entries(customGroups).map(([k,v])=>renderGroup(k,'📌 '+k,'var(--text2)',v)).join('');
+    renderGroup('loan',groupLabels.loan,'var(--blue)',groups.loan)+
+    renderGroup('card',groupLabels.card,'var(--red)',groups.card)+
+    renderGroup('friend',groupLabels.friend,'var(--yellow)',groups.friend)+
+    Object.entries(customGroups).map(([k,v])=>renderGroup(k,'📌 '+(k.startsWith('c_')?k.slice(2):k),'var(--text2)',v)).join('');
 
   if(!D.debts.length)dl.innerHTML='<div class="empty">尚無負債</div>';
 
@@ -854,8 +867,19 @@ function renderDebts(){
     <div class="cfm" id="cfm-r-${r.id}"><div class="cfm-msg">確定刪除？</div><div class="cfm-btns"><button class="btn btn-danger" style="flex:1;padding:7px;font-size:12px" onclick="removeReceivable(${r.id})">確定</button><button class="btn btn-secondary" style="flex:1;padding:7px;font-size:12px" onclick="hideCfm('cfm-r-${r.id}')">取消</button></div></div>
   `).join('')||'<div class="empty">無應收款</div>';
 
-  const logs=[...(D.payLogs||[])].sort((a,b)=>b.ts-a.ts).slice(0,20);
-  document.getElementById('pay-log-list').innerHTML=logs.length?logs.map(l=>`<div class="pay-log">${l.date} · ${l.debtName} · <span style="color:var(--green);font-family:var(--mono)">+$${Math.round(l.amount).toLocaleString()}</span>${l.note?' · '+l.note:''}</div>`).join(''):'<div class="empty">尚無還款紀錄</div>';
+  const logs=[...(D.payLogs||[])].sort((a,b)=>b.ts-a.ts);
+  const grouped={};
+  logs.forEach(l=>{
+    const ym=l.date.slice(0,7);
+    if(!grouped[ym])grouped[ym]=[];
+    grouped[ym].push(l);
+  });
+  const months=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+  document.getElementById('pay-log-list').innerHTML=months.length?months.map(ym=>`
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.05em;margin-bottom:6px">${ym}</div>
+      ${grouped[ym].map(l=>`<div class="pay-log">${l.date.slice(5)} · ${l.debtName} · <span style="color:var(--green);font-family:var(--mono)">+$${Math.round(l.amount).toLocaleString()}</span>${l.note?' · '+l.note:''}</div>`).join('')}
+    </div>`).join(''):'<div class="empty">尚無還款紀錄</div>';
 }
 
 function toggleDebtGroup(id){
@@ -1041,31 +1065,76 @@ function removeFixedExpense(id){D.fixedExpenses=(D.fixedExpenses||[]).filter(e=>
 
 // ── TRADES ────────────────────────────────────────────────────────────────────
 function renderTrades(){
-  const tPnl=D.trades.reduce((s,t)=>s+t.pnl,0);
-  const vs=D.trades.filter(t=>t.type==='violation');
-  const vPnl=vs.reduce((s,t)=>s+t.pnl,0);
+  const allTrades=D.trades||[];
+  const sopPnl=allTrades.filter(t=>t.mark==='green'||t.mark==='yellow').reduce((s,t)=>s+t.pnl,0);
+  const violationPnl=allTrades.filter(t=>t.mark==='red').reduce((s,t)=>s+t.pnl,0);
+  const histPnl=D.historicalPnl||0;
+  const markColors={green:'🟩',yellow:'🟨',red:'🟥'};
+  const markLabels={green:'照SOP',yellow:'細節誤',red:'憑感覺'};
+
   document.getElementById('tr-metrics').innerHTML=`
-    <div class="metric"><div class="metric-lbl">累計損益</div><div class="metric-val ${cc(tPnl)}">${fmt(tPnl)}</div></div>
-    <div class="metric"><div class="metric-lbl">當沖違規</div><div class="metric-val red">${fmt(vPnl)}</div></div>
-    <div class="metric"><div class="metric-lbl">正常操作</div><div class="metric-val ${cc(tPnl-vPnl)}">${fmt(tPnl-vPnl)}</div></div>`;
-  document.getElementById('tr-violations').innerHTML=vs.map((v,i)=>`
-    <div class="trade-row">
-      <div class="trade-hdr"><span class="trade-name" style="color:var(--red)">第${i+1}次 — ${v.symbol}</span><span style="font-family:var(--mono);font-size:12px;color:var(--red)">${fmt(v.pnl)}</span></div>
-      <div class="trade-sub">${v.date} ／ ${v.qty}張 ／ ${v.note}</div>
-    </div>`).join('')||'<div class="empty">暫無違規</div>';
-  const tl={futures:'期貨',stock:'現股',violation:'⚠ 當沖'};
-  document.getElementById('tr-list').innerHTML=[...D.trades].sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`
-    <div class="trade-row">
-      <div class="trade-hdr">
-        <span class="trade-name ${t.type==='violation'?'':''}\" style="${t.type==='violation'?'color:var(--red)':''}">${t.symbol}</span>
-        <span style="font-family:var(--mono);font-size:12px;color:var(--${cc(t.pnl)})">${fmt(t.pnl)}</span>
-      </div>
-      <div class="trade-sub">${t.date} ／ ${tl[t.type]||t.type} ／ ${t.qty}口/張${t.note?' ／ '+t.note:''}</div>
-      ${t.images&&t.images.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${t.images.map((img,i)=>`<img src="${img}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="viewTradeImage('${t.id}',${i})">`).join('')}</div>`:''}
-    </div>`).join('');
+    <div class="metric"><div class="metric-lbl">歷史總損益</div><div class="metric-val red">${fmt(histPnl)}</div></div>
+    <div class="metric"><div class="metric-lbl">SOP操作（5/9起）</div><div class="metric-val ${cc(sopPnl)}">${fmt(sopPnl)}</div></div>
+    <div class="metric"><div class="metric-lbl">違規損失（5/9起）</div><div class="metric-val red">${fmt(violationPnl)}</div></div>`;
+
+  // 按月分組
+  const grouped={};
+  allTrades.forEach(t=>{
+    const ym=t.date.slice(0,7);
+    if(!grouped[ym])grouped[ym]=[];
+    grouped[ym].push(t);
+  });
+  const months=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+  const tl={stock:'現股','stock-futures':'股期','index-large':'台指大','index-mini':'台指小','index-micro':'台指微'};
+
+  document.getElementById('tr-list').innerHTML=months.length?months.map(ym=>`
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.05em;margin-bottom:8px">${ym}</div>
+      ${grouped[ym].sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`
+        <div class="trade-row">
+          <div class="trade-hdr">
+            <span style="font-size:13px;font-weight:500">${markColors[t.mark]||''} ${t.symbol}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-family:var(--mono);font-size:12px;color:var(--${cc(t.pnl)})">${fmt(t.pnl)}</span>
+              <button onclick="editTrade(${t.id})" style="padding:3px 6px;font-size:10px;border:none;background:var(--bg3);color:var(--text2);border-radius:4px;cursor:pointer">編輯</button>
+              <button onclick="removeTrade(${t.id})" style="padding:3px 6px;font-size:10px;border:none;background:rgba(192,57,43,.1);color:var(--red);border-radius:4px;cursor:pointer">刪</button>
+            </div>
+          </div>
+          <div class="trade-sub">${t.date.slice(5)} ／ ${tl[t.type]||t.type} ／ ${t.qty}口/張${t.note?' ／ '+t.note:''}${t.mark?' ／ '+markLabels[t.mark]:''}</div>
+          ${t.review?`<div style="font-size:11px;color:var(--text2);margin-top:4px;padding:6px 8px;background:var(--bg3);border-radius:6px;line-height:1.6">📋 ${t.review}</div>`:''}
+          ${t.images&&t.images.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${t.images.map((img,i)=>`<img src="${img}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="viewTradeImage('${t.id}',${i})">`).join('')}</div>`:''}
+        </div>`).join('')}
+    </div>`).join(''):'<div class="empty">尚無交易紀錄<br><span style="font-size:11px;color:var(--text2);margin-top:4px;display:block">5/9 重新出發 🚀</span></div>';
+
+  document.getElementById('tr-violations').innerHTML='';
+}
+function removeTrade(id){if(confirm('確定刪除此交易？')){D.trades=D.trades.filter(t=>t.id!==id);save();render();}}
+function editTrade(id){
+  const t=D.trades.find(x=>x.id===id);
+  if(!t)return;
+  document.getElementById('t-date').value=t.date;
+  document.getElementById('t-symbol').value=t.symbol;
+  document.getElementById('t-type').value=t.type;
+  document.getElementById('t-qty').value=t.qty;
+  document.getElementById('t-pnl').value=t.pnl;
+  document.getElementById('t-note').value=t.note||'';
+  document.getElementById('t-review').value=t.review||'';
+  if(t.mark)selectMark(t.mark);
+  tradeEditId=id;
+  openModal('modal-trade');
 }
 
 let tradeImageData=[];
+let selectedMark='';
+let tradeEditId=null;
+function selectMark(m){
+  selectedMark=m;
+  ['green','yellow','red'].forEach(c=>{
+    const btn=document.getElementById('mark-'+c);
+    if(btn)btn.style.background=c===m?(c==='green'?'rgba(30,126,74,.15)':c==='yellow'?'rgba(154,104,0,.15)':'rgba(192,57,43,.15)'):'var(--bg3)';
+  });
+  document.getElementById('t-mark').value=m;
+}
 function previewTradeImages(event){
   const files=Array.from(event.target.files).slice(0,5);
   const preview=document.getElementById('t-image-preview');
@@ -1089,17 +1158,55 @@ function addTrade(){
   const pnl=parseFloat(document.getElementById('t-pnl').value);
   if(!date||!symbol||isNaN(pnl))return alert('請填寫日期、標的與損益');
   const images=tradeImageData.filter(Boolean).slice(0,5);
-  D.trades.push({id:D.nextId++,date,symbol,pnl,type:document.getElementById('t-type').value,qty:parseInt(document.getElementById('t-qty').value)||0,note:document.getElementById('t-note').value.trim(),images});
-  tradeImageData=[];
+  const mark=document.getElementById('t-mark').value||'';
+  const review=document.getElementById('t-review').value.trim();
+  const type=document.getElementById('t-type').value;
+  const qty=parseInt(document.getElementById('t-qty').value)||0;
+  const note=document.getElementById('t-note').value.trim();
+
+  // 記憶標的
+  if(!D.symbolHistory)D.symbolHistory=[];
+  if(!D.symbolHistory.includes(symbol))D.symbolHistory.push(symbol);
+
+  if(tradeEditId){
+    const idx=D.trades.findIndex(t=>t.id===tradeEditId);
+    if(idx>-1)D.trades[idx]={id:tradeEditId,date,symbol,pnl,type,qty,note,mark,review,images};
+    tradeEditId=null;
+  } else {
+    D.trades.push({id:D.nextId++,date,symbol,pnl,type,qty,note,mark,review,images});
+  }
+
+  tradeImageData=[];selectedMark='';
   document.getElementById('t-image-preview').innerHTML='';
   document.getElementById('t-images').value='';
-  save();closeModal('modal-trade');render();
+  document.getElementById('t-review').value='';
+  document.getElementById('t-mark').value='';
+  document.getElementById('t-note').value='';
+  ['green','yellow','red'].forEach(c=>{const btn=document.getElementById('mark-'+c);if(btn)btn.style.background='var(--bg3)';});
+  save();closeModal('modal-trade');updateSymbolList();render();
+}
+function updateSymbolList(){
+  const list=document.getElementById('symbol-list');
+  if(!list)return;
+  list.innerHTML=(D.symbolHistory||[]).map(s=>`<option value="${s}">`).join('');
 }
 
 // ── NTFY ──────────────────────────────────────────────────────────────────────
 function saveNtfySettings(){D.ntfyTopic=document.getElementById('ntfy-topic').value.trim();D.ntfy7d=document.getElementById('ntfy-7d').checked;D.ntfy3d=document.getElementById('ntfy-3d').checked;D.ntfy1d=document.getElementById('ntfy-1d').checked;save();alert('ntfy 設定已儲存');}
-async function sendNtfy(title,msg,priority='default'){const topic=D.ntfyTopic||'shen-debt-20260501-start';try{const r=await fetch(`https://ntfy.sh/${topic}`,{method:'POST',body:msg,headers:{'Title':title,'Priority':priority,'Tags':'bell','Content-Type':'text/plain; charset=utf-8'}});return r.ok;}catch{return false;}}
-async function testNtfy(){setNtfyStatus('idle','發送中...');const ok=await sendNtfy('理債手冊 · 測試通知','ntfy 通知功能正常運作 ✓','default');setNtfyStatus(ok?'ok':'err',ok?'測試通知已送出':'發送失敗，請確認 topic 名稱');}
+async function sendNtfy(title,msg,priority='default'){
+  const topic=(D.ntfyTopic||'shen-debt-2026').trim();
+  try{
+    // 用 URL 參數避免 CORS header 限制
+    const url=`https://ntfy.sh/${topic}?title=${encodeURIComponent(title)}&priority=${priority==='high'?'4':'3'}&tags=bell`;
+    await fetch(url,{method:'POST',mode:'no-cors',body:msg});
+    return true;
+  }catch(e){return false;}
+}
+async function testNtfy(){
+  setNtfyStatus('idle','發送中...');
+  await sendNtfy('理債手冊 · 測試通知','ntfy 通知功能正常運作 ✓','default');
+  setNtfyStatus('ok','已送出，請確認手機是否收到');
+}
 function setNtfyStatus(state,msg){document.getElementById('ntfy-dot').className='ntfy-dot ntfy-'+state;document.getElementById('ntfy-msg').textContent=msg;}
 
 // ── DATA IO ───────────────────────────────────────────────────────────────────
@@ -1119,7 +1226,18 @@ async function shareData(){
   exportData();
 }
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{D=JSON.parse(ev.target.result);save();render();alert('匯入成功');}catch{alert('格式錯誤');}};r.readAsText(f);}
-function clearData(){localStorage.removeItem('debt-v3');D=JSON.parse(JSON.stringify(DEF));save();render();hideCfm('cfm-clear');}
+function clearData(){
+  // 清除前自動備份
+  const date=new Date().toISOString().slice(0,10);
+  const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=`理債手冊_清除前備份_${date}.json`;a.click();
+  setTimeout(()=>{
+    localStorage.removeItem('debt-v3');
+    D=JSON.parse(JSON.stringify(DEF));
+    save();render();hideCfm('cfm-clear');
+  },500);
+}
 
 function viewTradeImage(tradeId,imgIdx){const t=D.trades.find(x=>x.id===parseInt(tradeId));if(!t||!t.images)return;document.getElementById('img-lightbox-src').src=t.images[imgIdx];const nav=document.getElementById('img-lightbox-nav');nav.innerHTML=t.images.map((img,i)=>`<div style="width:10px;height:10px;border-radius:50%;background:${i===imgIdx?'#fff':'rgba(255,255,255,0.4)'};cursor:pointer" onclick="event.stopPropagation();viewTradeImage(${tradeId},${i})"></div>`).join('');document.getElementById('img-lightbox').style.display='flex';}
 
@@ -1130,30 +1248,6 @@ function closeOut(e,id){if(e.target.id===id)closeModal(id);}
 function showCfm(id){document.getElementById(id).classList.add('show');}
 function hideCfm(id){const el=document.getElementById(id);if(el)el.classList.remove('show');}
 
-// ── GIST SETTINGS ─────────────────────────────────────────────────────────────
-function saveGistSettings(){
-  const gid=document.getElementById('settings-gist-id').value.trim();
-  const tok=document.getElementById('settings-token').value.trim();
-  if(!gid||!tok){alert('請填寫 Gist ID 和 Token');return;}
-  localStorage.setItem('cfg_gist_id',gid);
-  localStorage.setItem('cfg_gist_token',tok);
-  GIST_ID=gid; GIST_TOKEN=tok;
-  const el=document.getElementById('gist-status');
-  if(el)el.textContent='已儲存，正在同步...';
-  loadFromGist().then(()=>{render();if(el)el.textContent='✓ 同步完成';});
-}
-
-function renderGistSettings(){
-  const gidEl=document.getElementById('settings-gist-id');
-  const tokEl=document.getElementById('settings-token');
-  if(gidEl&&!gidEl.value)gidEl.value=localStorage.getItem('cfg_gist_id')||'';
-  const el=document.getElementById('gist-status');
-  if(el){
-    if(GIST_ID&&GIST_TOKEN)el.innerHTML='<span style="color:var(--green)">✓ 已設定</span>・Gist ID: '+GIST_ID.slice(0,8)+'...';
-    else el.innerHTML='<span style="color:var(--text3)">尚未設定，使用本機儲存</span>';
-  }
-}
-
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.getElementById('btn-add-debt').onclick=openAddDebt;
 document.getElementById('t-date').value=new Date().toISOString().slice(0,10);
@@ -1161,13 +1255,7 @@ document.getElementById('o-date').value=new Date().toISOString().slice(0,10);
 document.getElementById('inc-date').value=new Date().toISOString().slice(0,10);
 fillTypeSelect('d-type','loan');
 
-// 直接進入 app，有 Gist 就同步，沒有就用本機
-if(GIST_ID&&GIST_TOKEN){
-  (async()=>{await loadFromGist();render();renderGistSettings();})();
-} else {
-  render();
-  renderGistSettings();
-}
+(async()=>{await loadFromFirebase();render();})();
 </script>
 </body>
 </html>
