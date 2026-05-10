@@ -900,7 +900,11 @@ function removePayLog(id){
   if(!log)return;
   // 返還 debt.paid
   const debt=D.debts.find(d=>d.id===log.debtId);
-  if(debt)debt.paid=Math.max(0,(debt.paid||0)-log.amount);
+  if(debt){
+    debt.paid=Math.max(0,(debt.paid||0)-log.amount);
+    // 剩餘期數 +1
+    if(debt.periods>=0)debt.periods++;
+  }
   // 取消打勾狀態（如果有的話）
   const curYM=nowYM();
   const key=`debt-${log.debtId}-${curYM}`;
@@ -1183,6 +1187,7 @@ function previewTradeImages(event){
 }
 function removeTradeImage(idx){tradeImageData[idx]=null;const items=document.getElementById('t-image-preview').children;if(items[idx])items[idx].style.opacity='0.3';}
 function addTrade(){
+  if(!D.trades)D.trades=[];
   const date=document.getElementById('t-date').value;
   const symbol=document.getElementById('t-symbol').value.trim();
   const pnl=parseFloat(document.getElementById('t-pnl').value);
@@ -1272,7 +1277,7 @@ function clearData(){
 function viewTradeImage(tradeId,imgIdx){const t=D.trades.find(x=>x.id===parseInt(tradeId));if(!t||!t.images)return;document.getElementById('img-lightbox-src').src=t.images[imgIdx];const nav=document.getElementById('img-lightbox-nav');nav.innerHTML=t.images.map((img,i)=>`<div style="width:10px;height:10px;border-radius:50%;background:${i===imgIdx?'#fff':'rgba(255,255,255,0.4)'};cursor:pointer" onclick="event.stopPropagation();viewTradeImage(${tradeId},${i})"></div>`).join('');document.getElementById('img-lightbox').style.display='flex';}
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
-function openModal(id){document.getElementById(id).classList.add('open');}
+function openModal(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function closeOut(e,id){if(e.target.id===id)closeModal(id);}
 function showCfm(id){document.getElementById(id).classList.add('show');}
