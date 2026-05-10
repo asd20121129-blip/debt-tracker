@@ -153,7 +153,8 @@ select.fi{appearance:none}
         <option value="2025">2025年</option>
       </select>
     </div>
-    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px" id="net-worth-current"></div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;cursor:pointer" id="net-worth-current" onclick="toggleNetWorthDetail()"></div>
+    <div id="net-worth-detail" style="display:none;font-size:11px;color:var(--text2);margin-bottom:8px;padding:8px;background:var(--bg3);border-radius:6px;line-height:1.6"></div>
     <canvas id="networth-chart" style="max-height:180px"></canvas>
   </div>
   <div class="card" style="margin-bottom:8px">
@@ -947,32 +948,72 @@ function renderNetWorthChart(){
     monthlyData[ym].pnl+=t.pnl;
   });
 
-  // 依選擇年份篩選12個月
+  // 計算當下淨資產（全部資料累加）
+  let currentNW=histPnl;
+  const allMonths=Object.keys(monthlyData).sort();
+  allMonths.forEach(m=>{
+    const d=monthlyData[m];
+    currentNW+=d.income-d.paid+d.pnl;
+  });
+
+  // 計算年度資料（只顯示有資料的月份）
   const selectedYear=document.getElementById('networth-year-sel')?.value||'2026';
   const yearMonths=[];
   let cumulative=histPnl;
+  
+  // 先累加到選擇年份之前的所有資料
+  allMonths.filter(m=>m<selectedYear+'-01').forEach(m=>{
+    const d=monthlyData[m];
+    cumulative+=d.income-d.paid+d.pnl;
+  });
+  
+  // 只顯示有資料的月份
   for(let m=1;m<=12;m++){
     const ym=`${selectedYear}-${String(m).padStart(2,'0')}`;
-    const d=monthlyData[ym]||{income:0,paid:0,pnl:0};
+    if(!monthlyData[ym])continue; // 沒資料跳過
+    const d=monthlyData[ym];
     cumulative+=d.income-d.paid+d.pnl;
-    yearMonths.push({ym,value:cumulative});
+    yearMonths.push({ym,value:cumulative,month:m});
   }
 
-  const currentNW=yearMonths[yearMonths.length-1].value;
   const formatNW=(v)=>Math.abs(v)>=1000000?((v/1000000).toFixed(1)+'M'):((v/1000).toFixed(0)+'K');
-  document.getElementById('net-worth-current').innerHTML=`目前淨資產：<span style="color:${currentNW>=0?'var(--green)':'var(--red)'}">$${formatNW(currentNW)}</span>`;
+  
+  // 顯示當下淨資產和計算公式
+  const totalIncome=allIncome.reduce((s,e)=>s+e.amount,0);
+  const totalPaid=allPayments.reduce((s,p)=>s+p.amount,0);
+  const totalPnl=allTrades.reduce((s,t)=>s+t.pnl,0);
+  
+  document.getElementById('net-worth-current').innerHTML=`目前淨資產：<span style="color:${currentNW>=0?'var(--green)':'var(--red)'}">$${formatNW(currentNW)}</span> <span style="font-size:10px;color:var(--text3)">▾</span>`;
+  
+  document.getElementById('net-worth-detail').innerHTML=`
+    歷史損益：$${histPnl.toLocaleString()}<br>
+    總收入：+$${totalIncome.toLocaleString()}<br>
+    已還款：-$${totalPaid.toLocaleString()}<br>
+    操盤損益：${totalPnl>=0?'+':''}$${totalPnl.toLocaleString()}<br>
+    <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px;font-weight:600">
+      淨資產 = $${currentNW.toLocaleString()}
+    </div>`;
+
+  if(!yearMonths.length){
+    ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('暫無資料',w/2,h/2);return;
+  }
 
   const values=yearMonths.map(n=>n.value);
   const maxVal=Math.max(...values,0);
   const minVal=Math.min(...values,0);
   const range=Math.max(Math.abs(maxVal-minVal),1000);
-  const padding={top:30,bottom:30,left:60,right:20};
+  const padding={top:35,bottom:30,left:60,right:20};
   const chartW=w-padding.left-padding.right;
   const chartH=h-padding.top-padding.bottom;
-  const barW=chartW/12*0.7;
+  const barW=Math.min(chartW/yearMonths.length*0.7,50);
+
+  // 年份標題
+  ctx.fillStyle='#666';ctx.font='12px sans-serif';ctx.textAlign='center';
+  ctx.fillText(selectedYear+'年',w/2,15);
 
   // Y軸標籤
-  ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='right';
+  ctx.font='10px sans-serif';ctx.textAlign='right';
   for(let i=0;i<=4;i++){
     const val=maxVal-range*(i/4);
     const y=padding.top+chartH*(i/4);
@@ -991,21 +1032,20 @@ function renderNetWorthChart(){
   yearMonths.forEach((n,i)=>{
     const val=n.value;
     const barH=Math.abs(chartH*val/range);
-    const x=padding.left+chartW*(i+0.5)/12-barW/2;
+    const x=padding.left+chartW*(i+0.5)/yearMonths.length-barW/2;
     const y=val>=0?(padding.top+chartH*(1-(val-minVal)/range)):(padding.top+chartH*(1-(0-minVal)/range));
     ctx.fillStyle=val>=0?'#27ae60':'#c0392b';
     ctx.fillRect(x,y,barW,barH);
     // 柱頂數值
     ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
     ctx.fillText(formatNW(val),x+barW/2,val>=0?y-3:y+barH+12);
+    // 月份標籤
+    ctx.fillText(n.month+'月',x+barW/2,h-10);
   });
-  
-  // X軸標籤（YYYY/MM）
-  ctx.fillStyle='#666';ctx.font='8px sans-serif';ctx.textAlign='center';
-  yearMonths.forEach((n,i)=>{
-    const x=padding.left+chartW*(i+0.5)/12;
-    ctx.fillText(n.ym.replace('-','/'),x,h-10);
-  });
+}
+function toggleNetWorthDetail(){
+  const el=document.getElementById('net-worth-detail');
+  el.style.display=el.style.display==='none'?'block':'none';
 }
 
 // ── DEBTS ─────────────────────────────────────────────────────────────────────
