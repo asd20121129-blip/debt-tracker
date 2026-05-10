@@ -753,10 +753,8 @@ function renderOverview(){
 
   // 本月收支（上月24 + 本月9）
   const incomeItems=[];
-  const ovLast24=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(lastMonth)&&e.date.slice(8,10)==='24');
-  const ovCur09=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(curYM)&&e.date.slice(8,10)==='09');
-  if(ovLast24)incomeItems.push(ovLast24);
-  if(ovCur09)incomeItems.push(ovCur09);
+  if(last24)incomeItems.push(last24);
+  if(cur09)incomeItems.push(cur09);
   let cf=incomeItems.length
     ?incomeItems.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join('')
     :`<div class="cf-row"><span style="color:var(--text3);font-size:12px">本月尚無收入紀錄</span><span></span></div>`;
