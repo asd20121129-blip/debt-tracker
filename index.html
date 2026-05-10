@@ -240,7 +240,7 @@ select.fi{appearance:none}
 
 <!-- 支出 -->
 <div class="page" id="page-expenses">
-  <div class="sec-hdr" style="margin-top:4px"><span class="sec-lbl">定期支出</span><button class="btn btn-xs" onclick="openModal('modal-expense')">＋ 新增</button></div>
+  <div class="sec-hdr" style="margin-top:4px"><span class="sec-lbl">定期支出</span><button class="btn btn-xs" onclick="newExpense()">＋ 新增</button></div>
   <div id="expenses-list"></div>
   <div class="sec-hdr"><span class="sec-lbl">支出紀錄</span></div>
   <div class="card"><div id="expense-log-list"><div class="empty">尚無支出紀錄</div></div></div>
@@ -1173,6 +1173,19 @@ function toggleDebtDetail(id){
 }
 
 // ── EXPENSES ──────────────────────────────────────────────────────────────────
+function newExpense(){
+  document.getElementById('expense-modal-title').textContent='新增支出';
+  document.getElementById('exp-id').value='';
+  document.getElementById('exp-name').value='';
+  document.getElementById('exp-amount').value='';
+  document.getElementById('exp-frequency').value='monthly';
+  document.getElementById('exp-day').value='';
+  document.getElementById('exp-date').value='';
+  document.getElementById('exp-account').value='';
+  document.getElementById('exp-note').value='';
+  onExpFreqChange();
+  openModal('modal-expense');
+}
 function renderExpenses(){
   const list=document.getElementById('expenses-list');
   if(!list)return;
@@ -1211,12 +1224,25 @@ function renderExpenses(){
   if(!logList)return;
   const logs=(D.expenseLogs||[]).slice().sort((a,b)=>b.ts-a.ts);
   if(!logs.length){logList.innerHTML='<div class="empty">尚無支出紀錄</div>';return;}
-  logList.innerHTML=logs.map(log=>`<div class="log-item">
-    <div style="flex:1">
-      <div style="font-size:12px;color:var(--text2)">${log.date} · ${log.name} · $${Math.round(log.amount).toLocaleString()}${log.account?' · '+log.account:''}${log.note&&log.note!=='已繳'?' · '+log.note:''}</div>
-    </div>
-    <button class="btn-del" onclick="removeExpenseLog(${log.id})">刪</button>
-  </div>`).join('');
+  
+  // 按月份分組
+  const grouped={};
+  logs.forEach(l=>{
+    const ym=l.date.slice(0,7);
+    if(!grouped[ym])grouped[ym]=[];
+    grouped[ym].push(l);
+  });
+  const months=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+  
+  logList.innerHTML=months.length?months.map(ym=>`
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.05em;margin-bottom:6px">${ym}</div>
+      ${grouped[ym].map(log=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
+          <div style="font-size:12px;color:var(--text2)">${log.date.slice(5)} · ${log.name} · $${Math.round(log.amount).toLocaleString()}${log.account?' · '+log.account:''}${log.note&&log.note!=='已繳'?' · '+log.note:''}</div>
+          <button onclick="removeExpenseLog(${log.id})" style="padding:2px 6px;font-size:10px;border:none;background:rgba(192,57,43,.1);color:var(--red);border-radius:4px;cursor:pointer;margin-left:8px">刪</button>
+        </div>`).join('')}
+    </div>`).join(''):'<div class="empty">尚無支出紀錄</div>';
 }
 function editExpense(id){
   const e=D.expenses.find(x=>x.id===id);if(!e)return;
