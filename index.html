@@ -753,10 +753,10 @@ function renderOverview(){
 
   // 本月收支（上月24 + 本月9）
   const incomeItems=[];
-  const last24=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(lastMonth)&&e.date.slice(8,10)==='24');
-  const cur09=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(curYM)&&e.date.slice(8,10)==='09');
-  if(last24)incomeItems.push(last24);
-  if(cur09)incomeItems.push(cur09);
+  const ovLast24=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(lastMonth)&&e.date.slice(8,10)==='24');
+  const ovCur09=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(curYM)&&e.date.slice(8,10)==='09');
+  if(ovLast24)incomeItems.push(ovLast24);
+  if(ovCur09)incomeItems.push(ovCur09);
   let cf=incomeItems.length
     ?incomeItems.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join('')
     :`<div class="cf-row"><span style="color:var(--text3);font-size:12px">本月尚無收入紀錄</span><span></span></div>`;
@@ -1184,12 +1184,25 @@ function renderPnlChart(){
   canvas.style.height=h+'px';
   ctx.scale(dpr,dpr);
 
-  // 計算累積損益數據
-  const allTrades=[...(D.trades||[])].sort((a,b)=>a.date.localeCompare(b.date));
+  // 計算累積損益數據：按日期分組
+  const allTrades=[...(D.trades||[])];
   const histPnl=D.historicalPnl||0;
+  
+  // 按日期分組累加
+  const dailyPnl={};
+  allTrades.forEach(t=>{
+    if(!dailyPnl[t.date])dailyPnl[t.date]=0;
+    dailyPnl[t.date]+=t.pnl;
+  });
+  
+  // 轉為有序數據點
+  const dates=Object.keys(dailyPnl).sort();
   const data=[{date:'起始',pnl:histPnl}];
   let cumulative=histPnl;
-  allTrades.forEach(t=>{cumulative+=t.pnl;data.push({date:t.date,pnl:cumulative});});
+  dates.forEach(d=>{
+    cumulative+=dailyPnl[d];
+    data.push({date:d,pnl:cumulative});
+  });
 
   if(data.length<2){
     ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';
@@ -1198,7 +1211,7 @@ function renderPnlChart(){
 
   const maxPnl=Math.max(...data.map(d=>d.pnl));
   const minPnl=Math.min(...data.map(d=>d.pnl));
-  const range=Math.max(Math.abs(maxPnl-minPnl),1);
+  const range=Math.max(Math.abs(maxPnl-minPnl),1000);
   const padding={top:20,bottom:30,left:60,right:20};
   const chartW=w-padding.left-padding.right;
   const chartH=h-padding.top-padding.bottom;
@@ -1384,6 +1397,13 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 function closeOut(e,id){if(e.target.id===id)closeModal(id);}
 function showCfm(id){document.getElementById(id).classList.add('show');}
 function hideCfm(id){const el=document.getElementById(id);if(el)el.classList.remove('show');}
+function showPage(pageId,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const page=document.getElementById('page-'+pageId);
+  if(page)page.classList.add('active');
+  if(btn)btn.classList.add('active');
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.getElementById('btn-add-debt').onclick=openAddDebt;
