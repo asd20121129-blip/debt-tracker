@@ -763,27 +763,37 @@ function renderIncomeChart(){
     monthlyIncome[belongMonth]+=e.amount;
   });
 
-  // 依選擇年份篩選12個月
+  // 依選擇年份只顯示有資料的月份
   const selectedYear=document.getElementById('income-year-sel')?.value||'2026';
   const yearMonths=[];
   for(let m=1;m<=12;m++){
     const ym=`${selectedYear}-${String(m).padStart(2,'0')}`;
-    yearMonths.push({ym,val:monthlyIncome[ym]||0});
+    if(!monthlyIncome[ym])continue; // 沒資料跳過
+    yearMonths.push({ym,val:monthlyIncome[ym],month:m});
+  }
+
+  if(!yearMonths.length){
+    ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('暫無資料',w/2,h/2);return;
   }
 
   const values=yearMonths.map(d=>d.val);
   const maxVal=Math.max(...values,1);
-  const padding={top:30,bottom:30,left:60,right:20};
+  const padding={top:35,bottom:30,left:60,right:20};
   const chartW=w-padding.left-padding.right;
   const chartH=h-padding.top-padding.bottom;
-  const barW=chartW/12*0.7;
+  const barW=Math.min(chartW/yearMonths.length*0.7,50);
 
   // 計算6個月平均
   const recentValues=values.filter(v=>v>0).slice(-6);
   const avg=recentValues.length?recentValues.reduce((s,v)=>s+v,0)/recentValues.length:0;
 
+  // 年份標題
+  ctx.fillStyle='#666';ctx.font='12px sans-serif';ctx.textAlign='center';
+  ctx.fillText(selectedYear+'年',w/2,15);
+
   // Y軸標籤
-  ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='right';
+  ctx.font='10px sans-serif';ctx.textAlign='right';
   for(let i=0;i<=4;i++){
     const val=maxVal*(1-i/4);
     const y=padding.top+chartH*(i/4);
@@ -804,22 +814,16 @@ function renderIncomeChart(){
   // 繪製柱狀圖
   yearMonths.forEach((d,i)=>{
     const val=d.val;
-    if(val===0)return;
     const barH=chartH*(val/maxVal);
-    const x=padding.left+chartW*(i+0.5)/12-barW/2;
+    const x=padding.left+chartW*(i+0.5)/yearMonths.length-barW/2;
     const y=padding.top+chartH-barH;
     ctx.fillStyle='#27ae60';
     ctx.fillRect(x,y,barW,barH);
     // 柱頂數值
     ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='center';
     ctx.fillText((val/1000).toFixed(0)+'K',x+barW/2,y-3);
-  });
-  
-  // X軸標籤（YYYY/MM）
-  ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
-  yearMonths.forEach((d,i)=>{
-    const x=padding.left+chartW*(i+0.5)/12;
-    ctx.fillText(d.ym.replace('-','/'),x,h-10);
+    // 月份標籤
+    ctx.fillText(d.month+'月',x+barW/2,h-10);
   });
 }
 
@@ -842,9 +846,28 @@ function renderOverview(){
   const inc=(last24?last24.amount:0)+(cur09?cur09.amount:0);
   
   const totalDebt=D.debts.reduce((s,d)=>s+d.balance,0);
-  const mDebt=D.debts.filter(d=>d.monthly>0).reduce((s,d)=>s+d.monthly,0);
-  const mExpense=(D.expenses||[]).filter(e=>e.frequency==='monthly').reduce((s,e)=>s+e.amount,0);
-  const bal=inc-mDebt-mExpense;
+  
+  // 本月待繳清單所有項目
+  const now=new Date();
+  const monthKey=curYM;
+  const billItems=[];
+  D.debts.filter(d=>d.monthly>0&&d.showInBills!==false).forEach(d=>{
+    billItems.push({amount:d.monthly});
+  });
+  (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{
+    billItems.push({amount:e.amount});
+  });
+  D.debts.filter(d=>d.deadline).forEach(d=>{
+    const days=daysUntil(d.deadline);
+    if(days>=0&&days<=60)billItems.push({amount:d.balance});
+  });
+  (D.expenses||[]).filter(e=>e.frequency==='yearly').forEach(e=>{
+    const days=daysUntil(e.date);
+    if(days>=0&&days<=60)billItems.push({amount:e.amount});
+  });
+  const totalBills=billItems.reduce((s,b)=>s+b.amount,0);
+  const bal=inc-totalBills;
+  
   const tPnl=(D.trades||[]).reduce((s,t)=>s+t.pnl,0);
   document.getElementById('ov-metrics').innerHTML=`
     <div class="metric"><div class="metric-lbl">總負債</div><div class="metric-val red">-$${Math.round(totalDebt).toLocaleString()}</div></div>
@@ -852,29 +875,27 @@ function renderOverview(){
     <div class="metric"><div class="metric-lbl">操盤損益</div><div class="metric-val ${cc(tPnl)}">${fmt(tPnl)}</div></div>`;
 
   // 本月待繳
-  const now=new Date();
-  const monthKey=curYM;
   if(!D.paidItems)D.paidItems={};
-  const billItems=[];
+  const billItemsFull=[];
   D.debts.filter(d=>d.monthly>0&&d.showInBills!==false).forEach(d=>{
     const key=`debt-${d.id}-${monthKey}`;
-    billItems.push({key,name:d.name,amount:d.monthly,day:d.day,type:'debt',color:'var(--blue)'});
+    billItemsFull.push({key,name:d.name,amount:d.monthly,day:d.day,type:'debt',color:'var(--blue)'});
   });
   (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{
     const key=`exp-${e.id}-${monthKey}`;
-    billItems.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'expense',color:'var(--blue)'});
+    billItemsFull.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'expense',color:'var(--blue)'});
   });
   D.debts.filter(d=>d.deadline).forEach(d=>{
     const days=daysUntil(d.deadline);
-    if(days>=0&&days<=60){const key=`deadline-${d.id}`;billItems.push({key,name:d.name+' 到期',amount:d.balance,day:parseInt((d.deadline||'').split('-')[2])||0,type:'deadline',color:'var(--red)'});}
+    if(days>=0&&days<=60){const key=`deadline-${d.id}`;billItemsFull.push({key,name:d.name+' 到期',amount:d.balance,day:parseInt((d.deadline||'').split('-')[2])||0,type:'deadline',color:'var(--red)'});}
   });
   (D.expenses||[]).filter(e=>e.frequency==='yearly').forEach(e=>{
     const days=daysUntil(e.date);
-    if(days>=0&&days<=60){const key=`exp-${e.id}`;billItems.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'expense',color:'var(--yellow)'});}
+    if(days>=0&&days<=60){const key=`exp-${e.id}`;billItemsFull.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'expense',color:'var(--yellow)'});}
   });
-  billItems.sort((a,b)=>a.day-b.day);
+  billItemsFull.sort((a,b)=>a.day-b.day);
 
-  document.getElementById('ov-alerts').innerHTML=billItems.length?billItems.map(item=>{
+  document.getElementById('ov-alerts').innerHTML=billItemsFull.length?billItemsFull.map(item=>{
     const paid=!!(D.paidItems||{})[item.key];
     return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);${paid?'opacity:.4':''}">
       <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${item.color};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:${paid?item.color:'transparent'}" onclick="togglePaid('${item.key}','${item.name}',${item.amount})">
@@ -895,8 +916,12 @@ function renderOverview(){
   let cf=incomeItems.length
     ?incomeItems.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join('')
     :`<div class="cf-row"><span style="color:var(--text3);font-size:12px">本月尚無收入紀錄</span><span></span></div>`;
-  D.debts.filter(d=>d.monthly>0).forEach(d=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${d.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-d.monthly)}</span></div>`;});
-  (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-e.amount)}</span></div>`;});
+  
+  // 加入本月待繳清單項目
+  billItemsFull.forEach(item=>{
+    cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${item.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-item.amount)}</span></div>`;
+  });
+  
   cf+=`<div class="cf-total"><span>固定後結餘</span><span style="font-family:var(--mono);color:var(--${cc(bal)})">${fmt(bal)}</span></div>`;
   document.getElementById('ov-cashflow').innerHTML=cf;
 
