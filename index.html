@@ -145,6 +145,7 @@ select.fi{appearance:none}
 <div class="page active" id="page-overview">
   <div class="motto">面對．接受．處理．放下</div>
   <div class="metrics" id="ov-metrics"></div>
+  <div class="card" style="margin-top:8px"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">淨資產推移</div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px" id="net-worth-current"></div><canvas id="networth-chart" style="max-height:180px"></canvas></div>
   <div class="card" style="margin-bottom:8px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase">本月待繳</span>
@@ -162,6 +163,8 @@ select.fi{appearance:none}
     <div class="metric"><div class="metric-lbl">本月收入合計</div><div class="metric-val green" id="inc-page-total">$0</div></div>
     <div class="metric"><div class="metric-lbl">本月結餘</div><div class="metric-val" id="inc-page-balance">$0</div></div>
   </div>
+
+  <div class="card" style="margin-top:8px"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">月薪資推移</div><canvas id="income-chart" style="max-height:180px"></canvas></div>
 
   <!-- 新增收入（緊湊版） -->
   <div class="card" style="margin-bottom:8px">
@@ -423,14 +426,14 @@ const DEF = {
   ntfyTopic:'shen-debt-2026', ntfy7d:true, ntfy3d:true, ntfy1d:false,
   historicalPnl:-10000000,
   debts:[
-    {id:1,name:'連線銀行信貸',balance:2185304,paid:0,rate:3.68,monthly:21794,day:20,periods:120,type:'loan',deadline:null,showInBills:true,showInProgress:true},
-    {id:2,name:'台北富邦信貸',balance:431407,paid:0,rate:4.2,monthly:6330,day:21,periods:78,type:'loan',deadline:null,showInBills:true,showInProgress:true},
-    {id:8,name:'中租車貸',balance:570000,paid:0,rate:11.08,monthly:10598,day:6,periods:60,type:'c_二胎',deadline:null,showInBills:true,showInProgress:false},
-    {id:9,name:'三商美邦保單借款',balance:430000,paid:0,rate:3.5,monthly:1254,day:8,periods:0,type:'loan',deadline:null,showInBills:true,showInProgress:false},
-    {id:3,name:'永豐信用卡預借現金',balance:20000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null,showInBills:false,showInProgress:false},
-    {id:4,name:'中信信用卡預借現金',balance:17000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null,showInBills:false,showInProgress:false},
-    {id:5,name:'朋友 JY',balance:50000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01',showInBills:false,showInProgress:false},
-    {id:6,name:'朋友 IVY',balance:30000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01',showInBills:false,showInProgress:false},
+    {id:1,name:'連線銀行信貸',balance:2185304,paid:0,rate:3.68,monthly:21794,day:20,periods:120,originalPeriods:120,type:'loan',deadline:null,showInBills:true,showInProgress:true},
+    {id:2,name:'台北富邦信貸',balance:431407,paid:0,rate:4.2,monthly:6330,day:21,periods:78,originalPeriods:78,type:'loan',deadline:null,showInBills:true,showInProgress:true},
+    {id:8,name:'中租車貸',balance:570000,paid:0,rate:11.08,monthly:10598,day:6,periods:60,originalPeriods:60,type:'c_二胎',deadline:null,showInBills:true,showInProgress:false},
+    {id:9,name:'三商美邦保單借款',balance:430000,paid:0,rate:3.5,monthly:1254,day:8,periods:0,originalPeriods:0,type:'loan',deadline:null,showInBills:true,showInProgress:false},
+    {id:3,name:'永豐信用卡預借現金',balance:20000,paid:0,rate:0,monthly:0,day:0,periods:0,originalPeriods:0,type:'card',deadline:null,showInBills:false,showInProgress:false},
+    {id:4,name:'中信信用卡預借現金',balance:17000,paid:0,rate:0,monthly:0,day:0,periods:0,originalPeriods:0,type:'card',deadline:null,showInBills:false,showInProgress:false},
+    {id:5,name:'朋友 JY',balance:50000,paid:0,rate:0,monthly:0,day:0,periods:0,originalPeriods:0,type:'friend',deadline:'2026-05-01',showInBills:false,showInProgress:false},
+    {id:6,name:'朋友 IVY',balance:30000,paid:0,rate:0,monthly:0,day:0,periods:0,originalPeriods:0,type:'friend',deadline:'2026-05-01',showInBills:false,showInProgress:false},
   ],
   extraIncome:[
     {id:101,name:'下半月薪資',amount:62885,date:'2026-04-24',ts:1745452800000},
@@ -573,6 +576,10 @@ function togglePaid(key,name,amount){
       debt.paid=(debt.paid||0)+amount;
       // 剩餘期數 -1
       if(debt.periods>0)debt.periods=Math.max(0,debt.periods-1);
+      // 全清檢查
+      if(debt.balance<=debt.paid&&debt.periods===0){
+        alert('🎉 恭喜！已清償 '+name);
+      }
       if(!D.payLogs)D.payLogs=[];
       D.payLogs.push({id:D.nextId++,debtId:debt.id,debtName:name,amount:amount,note:'已繳',date:new Date().toISOString().slice(0,10),ts:Date.now(),type:'pay'});
     } else {
@@ -684,6 +691,76 @@ function renderIncome(){
       <div class="month-rows ${isOpen?'open':''}">${rows}</div>
     </div>`;
   }).join('');
+  
+  renderIncomeChart();
+}
+function renderIncomeChart(){
+  const canvas=document.getElementById('income-chart');
+  if(!canvas||!canvas.getContext)return;
+  const ctx=canvas.getContext('2d');
+  const parent=canvas.parentElement;
+  if(!parent)return;
+  
+  const dpr=window.devicePixelRatio||1;
+  const w=parent.clientWidth||300;
+  const h=180;
+  canvas.width=w*dpr;
+  canvas.height=h*dpr;
+  canvas.style.width=w+'px';
+  canvas.style.height=h+'px';
+  ctx.scale(dpr,dpr);
+
+  // 計算月薪資（上月24+本月9）
+  const all=D.extraIncome||[];
+  const monthlyIncome={};
+  all.forEach(e=>{
+    if(!e.date)return;
+    const ym=e.date.slice(0,7);
+    const day=e.date.slice(8,10);
+    if(day==='24'){
+      const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
+      const nextM=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;
+      if(!monthlyIncome[nextM])monthlyIncome[nextM]=0;
+      monthlyIncome[nextM]+=e.amount;
+    } else if(day==='09'){
+      if(!monthlyIncome[ym])monthlyIncome[ym]=0;
+      monthlyIncome[ym]+=e.amount;
+    }
+  });
+
+  const months=Object.keys(monthlyIncome).sort();
+  if(months.length<2){
+    ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('暫無足夠資料',w/2,h/2);return;
+  }
+
+  const values=months.map(m=>monthlyIncome[m]);
+  const maxVal=Math.max(...values);
+  const padding={top:20,bottom:30,left:60,right:20};
+  const chartW=w-padding.left-padding.right;
+  const chartH=h-padding.top-padding.bottom;
+  const barW=chartW/months.length*0.7;
+
+  // Y軸標籤
+  ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const val=maxVal*(1-i/4);
+    const y=padding.top+chartH*(i/4);
+    ctx.fillText((val/1000).toFixed(0)+'K',padding.left-8,y+3);
+  }
+
+  // 繪製柱狀圖
+  months.forEach((m,i)=>{
+    const val=monthlyIncome[m];
+    const barH=chartH*(val/maxVal);
+    const x=padding.left+chartW*(i+0.5)/months.length-barW/2;
+    const y=padding.top+chartH-barH;
+    ctx.fillStyle='#27ae60';
+    ctx.fillRect(x,y,barW,barH);
+    // 月份標籤
+    ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
+    ctx.fillText(m.slice(5),x+barW/2,h-10);
+  });
 }
 
 function toggleMonthGroup(hdr){
@@ -769,6 +846,103 @@ function renderOverview(){
     const tot=d.paid+d.balance;const pct=tot>0?Math.min(100,Math.round(d.paid/tot*100)):0;
     return `<div class="prog-wrap"><div class="prog-lbl"><span>${d.name}</span><span>已還${pct}%・剩 $${Math.round(d.balance).toLocaleString()}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${tColor(d.type)}"></div></div></div>`;
   }).join(''):'<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px 0">無顯示項目<br><span style="font-size:10px;margin-top:4px;display:block">到負債清單編輯，勾選「顯示在還款進度」</span></div>';
+  
+  renderNetWorthChart();
+}
+function renderNetWorthChart(){
+  const canvas=document.getElementById('networth-chart');
+  if(!canvas||!canvas.getContext)return;
+  const ctx=canvas.getContext('2d');
+  const parent=canvas.parentElement;
+  if(!parent)return;
+  
+  const dpr=window.devicePixelRatio||1;
+  const w=parent.clientWidth||300;
+  const h=180;
+  canvas.width=w*dpr;
+  canvas.height=h*dpr;
+  canvas.style.width=w+'px';
+  canvas.style.height=h+'px';
+  ctx.scale(dpr,dpr);
+
+  // 計算月淨資產：所有收入 - 已扣款負債 + 操盤損益
+  const allIncome=D.extraIncome||[];
+  const allPayments=D.payLogs||[];
+  const allTrades=D.trades||[];
+  const histPnl=D.historicalPnl||0;
+
+  const monthlyData={};
+  allIncome.forEach(e=>{
+    const ym=e.date.slice(0,7);
+    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,pnl:0};
+    monthlyData[ym].income+=e.amount;
+  });
+  allPayments.forEach(p=>{
+    const ym=p.date.slice(0,7);
+    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,pnl:0};
+    monthlyData[ym].paid+=p.amount;
+  });
+  allTrades.forEach(t=>{
+    const ym=t.date.slice(0,7);
+    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,pnl:0};
+    monthlyData[ym].pnl+=t.pnl;
+  });
+
+  const months=Object.keys(monthlyData).sort();
+  if(months.length<1){
+    ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('暫無資料',w/2,h/2);return;
+  }
+
+  // 累積淨資產
+  let cumulative=histPnl;
+  const netWorth=months.map(m=>{
+    const d=monthlyData[m];
+    cumulative+=d.income-d.paid+d.pnl;
+    return {month:m,value:cumulative};
+  });
+
+  const currentNW=netWorth[netWorth.length-1].value;
+  const formatNW=(v)=>Math.abs(v)>=1000000?((v/1000000).toFixed(1)+'M'):((v/1000).toFixed(0)+'K');
+  document.getElementById('net-worth-current').innerHTML=`目前淨資產：<span style="color:${currentNW>=0?'var(--green)':'var(--red)'}">$${formatNW(currentNW)}</span>`;
+
+  const values=netWorth.map(n=>n.value);
+  const maxVal=Math.max(...values,0);
+  const minVal=Math.min(...values,0);
+  const range=Math.max(Math.abs(maxVal-minVal),1000);
+  const padding={top:20,bottom:30,left:60,right:20};
+  const chartW=w-padding.left-padding.right;
+  const chartH=h-padding.top-padding.bottom;
+  const barW=chartW/months.length*0.7;
+
+  // Y軸標籤
+  ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const val=maxVal-range*(i/4);
+    const y=padding.top+chartH*(i/4);
+    ctx.fillText(formatNW(val),padding.left-8,y+3);
+  }
+
+  // 零線
+  if(minVal<0&&maxVal>0){
+    const zeroY=padding.top+chartH*(1-(0-minVal)/range);
+    ctx.strokeStyle='#888';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(padding.left,zeroY);ctx.lineTo(w-padding.right,zeroY);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // 繪製柱狀圖
+  netWorth.forEach((n,i)=>{
+    const val=n.value;
+    const barH=Math.abs(chartH*val/range);
+    const x=padding.left+chartW*(i+0.5)/months.length-barW/2;
+    const y=val>=0?(padding.top+chartH*(1-(val-minVal)/range)):(padding.top+chartH*(1-(0-minVal)/range));
+    ctx.fillStyle=val>=0?'#27ae60':'#c0392b';
+    ctx.fillRect(x,y,barW,barH);
+    // 月份標籤
+    ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
+    ctx.fillText(n.month.slice(5),x+barW/2,h-10);
+  });
 }
 
 // ── DEBTS ─────────────────────────────────────────────────────────────────────
@@ -915,12 +1089,17 @@ function removePayLog(id){
   if(!confirm('確定刪除此還款紀錄？'))return;
   const log=D.payLogs.find(l=>l.id===id);
   if(!log)return;
-  // 返還 debt.paid
+  // 返還 debt.paid 和 balance
   const debt=D.debts.find(d=>d.id===log.debtId);
   if(debt){
     debt.paid=Math.max(0,(debt.paid||0)-log.amount);
-    // 剩餘期數 +1
-    if(debt.periods>=0)debt.periods++;
+    debt.balance=(debt.balance||0)+log.amount;
+    // 計算已繳次數（扣除當前這筆）
+    const paidCount=D.payLogs.filter(l=>l.debtId===log.debtId&&l.id!==id).length;
+    // 還原期數 = 原始期數 - 已繳次數
+    if(debt.originalPeriods!==undefined){
+      debt.periods=Math.max(0,debt.originalPeriods-paidCount);
+    }
   }
   // 取消打勾狀態（如果有的話）
   const curYM=nowYM();
@@ -1063,10 +1242,20 @@ function saveDebt(){
   if(!name||!balance)return alert('請填寫名稱與餘額');
   const showInBills=document.getElementById('d-showInBills').checked;
   const showInProgress=document.getElementById('d-showInProgress').checked;
-  const obj={name,balance,paid:parseFloat(document.getElementById('d-paid').value)||0,rate:parseFloat(document.getElementById('d-rate').value)||0,monthly:parseFloat(document.getElementById('d-monthly').value)||0,day:parseInt(document.getElementById('d-day').value)||0,periods:parseInt(document.getElementById('d-periods').value)||0,type:document.getElementById('d-type').value,deadline:document.getElementById('d-deadline').value||null,showInBills,showInProgress};
+  const periods=parseInt(document.getElementById('d-periods').value)||0;
+  const obj={name,balance,paid:parseFloat(document.getElementById('d-paid').value)||0,rate:parseFloat(document.getElementById('d-rate').value)||0,monthly:parseFloat(document.getElementById('d-monthly').value)||0,day:parseInt(document.getElementById('d-day').value)||0,periods,type:document.getElementById('d-type').value,deadline:document.getElementById('d-deadline').value||null,showInBills,showInProgress};
   const eid=parseInt(document.getElementById('d-id').value);
-  if(eid){const i=D.debts.findIndex(d=>d.id===eid);if(i>-1)D.debts[i]={...D.debts[i],...obj};}
-  else D.debts.push({id:D.nextId++,...obj});
+  if(eid){
+    const i=D.debts.findIndex(d=>d.id===eid);
+    if(i>-1){
+      // 編輯時保留 originalPeriods
+      if(D.debts[i].originalPeriods===undefined)D.debts[i].originalPeriods=periods;
+      D.debts[i]={...D.debts[i],...obj};
+    }
+  } else {
+    // 新增時設定 originalPeriods
+    D.debts.push({id:D.nextId++,originalPeriods:periods,...obj});
+  }
   save();closeModal('modal-debt');render();
 }
 function onTypeChange(){document.getElementById('d-deadline-grp').style.display=document.getElementById('d-type').value==='friend'?'block':'none';}
