@@ -145,7 +145,17 @@ select.fi{appearance:none}
 <div class="page active" id="page-overview">
   <div class="motto">面對．接受．處理．放下</div>
   <div class="metrics" id="ov-metrics"></div>
-  <div class="card" style="margin-top:8px"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">淨資產推移</div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px" id="net-worth-current"></div><canvas id="networth-chart" style="max-height:180px"></canvas></div>
+  <div class="card" style="margin-top:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase">淨資產推移</span>
+      <select id="networth-year-sel" onchange="renderNetWorthChart()" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg2);color:var(--text);font-size:11px">
+        <option value="2026">2026年</option>
+        <option value="2025">2025年</option>
+      </select>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px" id="net-worth-current"></div>
+    <canvas id="networth-chart" style="max-height:180px"></canvas>
+  </div>
   <div class="card" style="margin-bottom:8px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase">本月待繳</span>
@@ -159,9 +169,15 @@ select.fi{appearance:none}
 
 <!-- 收入 -->
 <div class="page" id="page-income">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px 0">
+    <select id="income-year-sel" onchange="render()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px">
+      <option value="2026">2026年</option>
+      <option value="2025">2025年</option>
+    </select>
+  </div>
   <div class="metrics" style="grid-template-columns:1fr 1fr;margin-top:4px">
     <div class="metric"><div class="metric-lbl">本月收入合計</div><div class="metric-val green" id="inc-page-total">$0</div></div>
-    <div class="metric"><div class="metric-lbl">本月結餘</div><div class="metric-val" id="inc-page-balance">$0</div></div>
+    <div class="metric"><div class="metric-lbl" id="inc-year-label">2026年薪資總收入</div><div class="metric-val green" id="inc-year-total">$0</div></div>
   </div>
 
   <div class="card" style="margin-top:8px"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">月薪資推移</div><canvas id="income-chart" style="max-height:180px"></canvas></div>
@@ -639,9 +655,18 @@ function renderIncome(){
   const bal=thisMonthInc-paidOut;
 
   const t=document.getElementById('inc-page-total');
-  const b=document.getElementById('inc-page-balance');
   if(t)t.textContent='$'+thisMonthInc.toLocaleString();
-  if(b){b.textContent=fmt(bal);b.className='metric-val '+(bal>=0?'green':'red');}
+  
+  // 年度薪資總收入
+  const selectedYear=document.getElementById('income-year-sel')?.value||'2026';
+  const yearIncome=all.filter(e=>{
+    const isSalary=e.name==='上半月薪資'||e.name==='下半月薪資';
+    return isSalary&&e.date.startsWith(selectedYear);
+  }).reduce((s,e)=>s+e.amount,0);
+  const yt=document.getElementById('inc-year-total');
+  const yl=document.getElementById('inc-year-label');
+  if(yt)yt.textContent='$'+yearIncome.toLocaleString();
+  if(yl)yl.textContent=selectedYear+'年薪資總收入';
 
   const logEl=document.getElementById('inc-log-list');
   if(!logEl)return;
@@ -737,18 +762,24 @@ function renderIncomeChart(){
     monthlyIncome[belongMonth]+=e.amount;
   });
 
-  const months=Object.keys(monthlyIncome).sort();
-  if(months.length<2){
-    ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';
-    ctx.fillText('暫無足夠資料',w/2,h/2);return;
+  // 依選擇年份篩選12個月
+  const selectedYear=document.getElementById('income-year-sel')?.value||'2026';
+  const yearMonths=[];
+  for(let m=1;m<=12;m++){
+    const ym=`${selectedYear}-${String(m).padStart(2,'0')}`;
+    yearMonths.push({ym,val:monthlyIncome[ym]||0});
   }
 
-  const values=months.map(m=>monthlyIncome[m]);
-  const maxVal=Math.max(...values);
-  const padding={top:20,bottom:30,left:60,right:20};
+  const values=yearMonths.map(d=>d.val);
+  const maxVal=Math.max(...values,1);
+  const padding={top:30,bottom:30,left:60,right:20};
   const chartW=w-padding.left-padding.right;
   const chartH=h-padding.top-padding.bottom;
-  const barW=chartW/months.length*0.7;
+  const barW=chartW/12*0.7;
+
+  // 計算6個月平均
+  const recentValues=values.filter(v=>v>0).slice(-6);
+  const avg=recentValues.length?recentValues.reduce((s,v)=>s+v,0)/recentValues.length:0;
 
   // Y軸標籤
   ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='right';
@@ -758,17 +789,36 @@ function renderIncomeChart(){
     ctx.fillText((val/1000).toFixed(0)+'K',padding.left-8,y+3);
   }
 
+  // 平均線
+  if(avg>0){
+    const avgY=padding.top+chartH*(1-avg/maxVal);
+    ctx.strokeStyle='#e74c3c';ctx.lineWidth=2;ctx.setLineDash([5,5]);
+    ctx.beginPath();ctx.moveTo(padding.left,avgY);ctx.lineTo(w-padding.right,avgY);ctx.stroke();
+    ctx.setLineDash([]);
+    // 平均值標籤
+    ctx.fillStyle='#e74c3c';ctx.font='11px sans-serif';ctx.textAlign='left';
+    ctx.fillText('平均 '+(avg/1000).toFixed(0)+'K',w-padding.right-70,avgY-5);
+  }
+
   // 繪製柱狀圖
-  months.forEach((m,i)=>{
-    const val=monthlyIncome[m];
+  yearMonths.forEach((d,i)=>{
+    const val=d.val;
+    if(val===0)return;
     const barH=chartH*(val/maxVal);
-    const x=padding.left+chartW*(i+0.5)/months.length-barW/2;
+    const x=padding.left+chartW*(i+0.5)/12-barW/2;
     const y=padding.top+chartH-barH;
     ctx.fillStyle='#27ae60';
     ctx.fillRect(x,y,barW,barH);
-    // 月份標籤
-    ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
-    ctx.fillText(m.slice(5),x+barW/2,h-10);
+    // 柱頂數值
+    ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='center';
+    ctx.fillText((val/1000).toFixed(0)+'K',x+barW/2,y-3);
+  });
+  
+  // X軸標籤（YYYY/MM）
+  ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
+  yearMonths.forEach((d,i)=>{
+    const x=padding.left+chartW*(i+0.5)/12;
+    ctx.fillText(d.ym.replace('-','/'),x,h-10);
   });
 }
 
@@ -897,32 +947,29 @@ function renderNetWorthChart(){
     monthlyData[ym].pnl+=t.pnl;
   });
 
-  const months=Object.keys(monthlyData).sort();
-  if(months.length<1){
-    ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';
-    ctx.fillText('暫無資料',w/2,h/2);return;
+  // 依選擇年份篩選12個月
+  const selectedYear=document.getElementById('networth-year-sel')?.value||'2026';
+  const yearMonths=[];
+  let cumulative=histPnl;
+  for(let m=1;m<=12;m++){
+    const ym=`${selectedYear}-${String(m).padStart(2,'0')}`;
+    const d=monthlyData[ym]||{income:0,paid:0,pnl:0};
+    cumulative+=d.income-d.paid+d.pnl;
+    yearMonths.push({ym,value:cumulative});
   }
 
-  // 累積淨資產
-  let cumulative=histPnl;
-  const netWorth=months.map(m=>{
-    const d=monthlyData[m];
-    cumulative+=d.income-d.paid+d.pnl;
-    return {month:m,value:cumulative};
-  });
-
-  const currentNW=netWorth[netWorth.length-1].value;
+  const currentNW=yearMonths[yearMonths.length-1].value;
   const formatNW=(v)=>Math.abs(v)>=1000000?((v/1000000).toFixed(1)+'M'):((v/1000).toFixed(0)+'K');
   document.getElementById('net-worth-current').innerHTML=`目前淨資產：<span style="color:${currentNW>=0?'var(--green)':'var(--red)'}">$${formatNW(currentNW)}</span>`;
 
-  const values=netWorth.map(n=>n.value);
+  const values=yearMonths.map(n=>n.value);
   const maxVal=Math.max(...values,0);
   const minVal=Math.min(...values,0);
   const range=Math.max(Math.abs(maxVal-minVal),1000);
-  const padding={top:20,bottom:30,left:60,right:20};
+  const padding={top:30,bottom:30,left:60,right:20};
   const chartW=w-padding.left-padding.right;
   const chartH=h-padding.top-padding.bottom;
-  const barW=chartW/months.length*0.7;
+  const barW=chartW/12*0.7;
 
   // Y軸標籤
   ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='right';
@@ -941,16 +988,23 @@ function renderNetWorthChart(){
   }
 
   // 繪製柱狀圖
-  netWorth.forEach((n,i)=>{
+  yearMonths.forEach((n,i)=>{
     const val=n.value;
     const barH=Math.abs(chartH*val/range);
-    const x=padding.left+chartW*(i+0.5)/months.length-barW/2;
+    const x=padding.left+chartW*(i+0.5)/12-barW/2;
     const y=val>=0?(padding.top+chartH*(1-(val-minVal)/range)):(padding.top+chartH*(1-(0-minVal)/range));
     ctx.fillStyle=val>=0?'#27ae60':'#c0392b';
     ctx.fillRect(x,y,barW,barH);
-    // 月份標籤
+    // 柱頂數值
     ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
-    ctx.fillText(n.month.slice(5),x+barW/2,h-10);
+    ctx.fillText(formatNW(val),x+barW/2,val>=0?y-3:y+barH+12);
+  });
+  
+  // X軸標籤（YYYY/MM）
+  ctx.fillStyle='#666';ctx.font='8px sans-serif';ctx.textAlign='center';
+  yearMonths.forEach((n,i)=>{
+    const x=padding.left+chartW*(i+0.5)/12;
+    ctx.fillText(n.ym.replace('-','/'),x,h-10);
   });
 }
 
