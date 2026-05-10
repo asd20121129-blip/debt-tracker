@@ -215,6 +215,7 @@ select.fi{appearance:none}
 <div class="page" id="page-trades">
   <div class="sec-hdr" style="margin-top:4px"><span class="sec-lbl">累計損益</span><button class="btn btn-xs" onclick="openModal('modal-trade')">＋ 新增</button></div>
   <div class="metrics" id="tr-metrics"></div>
+  <div class="card" style="margin-top:8px"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">損益推移</div><canvas id="pnl-chart" style="max-height:180px"></canvas></div>
   <div class="card"><div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">交易明細</div><div id="tr-list"></div></div>
 </div>
 
@@ -606,11 +607,16 @@ function removeIncome(id){D.extraIncome=(D.extraIncome||[]).filter(e=>e.id!==id)
 function renderIncome(){
   const all=D.extraIncome||[];
   const curYM=nowYM();
+  const curYear=parseInt(curYM.split('-')[0]);
+  const curMonth=parseInt(curYM.split('-')[1]);
 
-  // 本月收入（只算當月）
-  const thisMonthInc=all.filter(e=>e.date&&e.date.slice(0,7)===curYM).reduce((s,e)=>s+e.amount,0);
+  // 上月24號 + 本月9號
+  const lastMonth=curMonth===1?`${curYear-1}-12`:`${curYear}-${String(curMonth-1).padStart(2,'0')}`;
+  const last24=all.find(e=>e.date&&e.date.startsWith(lastMonth)&&e.date.slice(8,10)==='24');
+  const cur09=all.find(e=>e.date&&e.date.startsWith(curYM)&&e.date.slice(8,10)==='09');
+  const thisMonthInc=(last24?last24.amount:0)+(cur09?cur09.amount:0);
 
-  // 本月結餘 = 本月收入 - 本月待繳已勾選項目
+  // 本月結餘 = (上月24+本月9) - 本月待繳已勾選
   const monthKey=curYM;
   let paidOut=0;
   if(D.paidItems){
@@ -618,12 +624,8 @@ function renderIncome(){
       const key=`debt-${d.id}-${monthKey}`;
       if(D.paidItems[key])paidOut+=d.monthly;
     });
-    (D.fixedExpenses||[]).forEach(e=>{
-      const key=`fe-${e.id}-${monthKey}`;
-      if(D.paidItems[key])paidOut+=e.amount;
-    });
-    (D.oneTimeExpenses||[]).forEach(e=>{
-      const key=`ot-${e.id}`;
+    (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{
+      const key=`exp-${e.id}-${monthKey}`;
       if(D.paidItems[key])paidOut+=e.amount;
     });
   }
@@ -648,10 +650,15 @@ function renderIncome(){
 
   // monthly fixed outgoing for balance calc
   const fixedMonthly=(D.debts||[]).filter(d=>d.monthly>0).reduce((s,d)=>s+d.monthly,0)
-    +(D.fixedExpenses||[]).reduce((s,e)=>s+e.amount,0);
+    +(D.expenses||[]).filter(e=>e.frequency==='monthly').reduce((s,e)=>s+e.amount,0);
 
   logEl.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map((ym,idx)=>{
-    const monthTotal=groups[ym].reduce((s,e)=>s+e.amount,0);
+    // 該月收入 = 上月24號 + 該月9號
+    const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
+    const prevM=m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`;
+    const prev24=all.find(e=>e.date&&e.date.startsWith(prevM)&&e.date.slice(8,10)==='24');
+    const this09=all.find(e=>e.date&&e.date.startsWith(ym)&&e.date.slice(8,10)==='09');
+    const monthTotal=(prev24?prev24.amount:0)+(this09?this09.amount:0);
     const afterFixed=monthTotal-fixedMonthly;
     const isOpen=ym===curYM; // 當月預設展開
     const rows=groups[ym].map(e=>`
@@ -688,7 +695,15 @@ function toggleMonthGroup(hdr){
 // ── OVERVIEW ──────────────────────────────────────────────────────────────────
 function renderOverview(){
   const curYM=nowYM();
-  const inc=(D.extraIncome||[]).filter(e=>e.date&&e.date.slice(0,7)===curYM).reduce((s,e)=>s+e.amount,0);
+  const curYear=parseInt(curYM.split('-')[0]);
+  const curMonth=parseInt(curYM.split('-')[1]);
+  
+  // 上月24號薪資 + 本月9號薪資
+  const lastMonth=curMonth===1?`${curYear-1}-12`:`${curYear}-${String(curMonth-1).padStart(2,'0')}`;
+  const last24=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(lastMonth)&&e.date.slice(8,10)==='24');
+  const cur09=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(curYM)&&e.date.slice(8,10)==='09');
+  const inc=(last24?last24.amount:0)+(cur09?cur09.amount:0);
+  
   const totalDebt=D.debts.reduce((s,d)=>s+d.balance,0);
   const mDebt=D.debts.filter(d=>d.monthly>0).reduce((s,d)=>s+d.monthly,0);
   const mExpense=(D.expenses||[]).filter(e=>e.frequency==='monthly').reduce((s,e)=>s+e.amount,0);
@@ -1105,11 +1120,15 @@ function renderTrades(){
   const sopPnl=allTrades.filter(t=>t.mark==='green'||t.mark==='yellow').reduce((s,t)=>s+t.pnl,0);
   const violationPnl=allTrades.filter(t=>t.mark==='red').reduce((s,t)=>s+t.pnl,0);
   const histPnl=D.historicalPnl||0;
+  const totalPnl=histPnl+allTrades.reduce((s,t)=>s+t.pnl,0);
   const markColors={green:'🟩',yellow:'🟨',red:'🟥'};
   const markLabels={green:'照SOP',yellow:'細節誤',red:'憑感覺'};
 
   document.getElementById('tr-metrics').innerHTML=`
-    <div class="metric"><div class="metric-lbl">歷史總損益</div><div class="metric-val red">${fmt(histPnl)}</div></div>
+    <div class="metric" onclick="editHistoricalPnl()" style="cursor:pointer">
+      <div class="metric-lbl">總損益（點擊編輯）</div>
+      <div class="metric-val ${cc(totalPnl)}">${fmt(totalPnl)}</div>
+    </div>
     <div class="metric"><div class="metric-lbl">SOP操作（5/9起）</div><div class="metric-val ${cc(sopPnl)}">${fmt(sopPnl)}</div></div>
     <div class="metric"><div class="metric-lbl">違規損失（5/9起）</div><div class="metric-val red">${fmt(violationPnl)}</div></div>`;
 
@@ -1141,6 +1160,79 @@ function renderTrades(){
           ${t.images&&t.images.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${t.images.map((img,i)=>`<img src="${img}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="viewTradeImage('${t.id}',${i})">`).join('')}</div>`:''}
         </div>`).join('')}
     </div>`).join(''):'<div class="empty">尚無交易紀錄<br><span style="font-size:11px;color:var(--text2);margin-top:4px;display:block">5/9 重新出發 🚀</span></div>';
+
+  // 損益推移圖
+  renderPnlChart();
+}
+function renderPnlChart(){
+  const canvas=document.getElementById('pnl-chart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=180*dpr;
+  ctx.scale(dpr,dpr);
+  const w=rect.width,h=180;
+
+  // 計算累積損益數據
+  const allTrades=[...(D.trades||[])].sort((a,b)=>a.date.localeCompare(b.date));
+  const histPnl=D.historicalPnl||0;
+  const data=[{date:'起始',pnl:histPnl}];
+  let cumulative=histPnl;
+  allTrades.forEach(t=>{cumulative+=t.pnl;data.push({date:t.date,pnl:cumulative});});
+
+  if(data.length<2){
+    ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('暫無足夠資料',w/2,h/2);return;
+  }
+
+  const maxPnl=Math.max(...data.map(d=>d.pnl));
+  const minPnl=Math.min(...data.map(d=>d.pnl));
+  const range=maxPnl-minPnl||1;
+  const padding={top:20,bottom:30,left:50,right:20};
+  const chartW=w-padding.left-padding.right;
+  const chartH=h-padding.top-padding.bottom;
+
+  // 繪製網格
+  ctx.strokeStyle='#e0e0e0';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=padding.top+chartH*(i/4);
+    ctx.beginPath();ctx.moveTo(padding.left,y);ctx.lineTo(w-padding.right,y);ctx.stroke();
+  }
+
+  // Y軸標籤
+  ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const val=maxPnl-range*(i/4);
+    const y=padding.top+chartH*(i/4);
+    ctx.fillText((val/10000).toFixed(0)+'萬',padding.left-8,y+3);
+  }
+
+  // 繪製折線
+  ctx.strokeStyle='#1a6fbf';ctx.lineWidth=2;ctx.beginPath();
+  data.forEach((d,i)=>{
+    const x=padding.left+chartW*(i/(data.length-1));
+    const y=padding.top+chartH*(1-(d.pnl-minPnl)/range);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // 繪製點
+  data.forEach((d,i)=>{
+    const x=padding.left+chartW*(i/(data.length-1));
+    const y=padding.top+chartH*(1-(d.pnl-minPnl)/range);
+    ctx.fillStyle=d.pnl>=0?'#27ae60':'#c0392b';
+    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+  });
+}
+function editHistoricalPnl(){
+  const current=D.historicalPnl||0;
+  const input=prompt('編輯總損益基準值（5/9 前累計）：',current);
+  if(input===null)return;
+  const val=parseFloat(input);
+  if(isNaN(val))return alert('請輸入有效數字');
+  D.historicalPnl=val;
+  save();render();
 }
 function removeTrade(id){if(confirm('確定刪除此交易？')){D.trades=D.trades.filter(t=>t.id!==id);save();render();}}
 function editTrade(id){
