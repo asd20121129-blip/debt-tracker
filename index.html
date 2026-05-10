@@ -653,10 +653,10 @@ function renderIncome(){
     const ym=e.date.slice(0,7);
     const day=e.date.slice(8,10);
     let belongMonth=ym;
-    // 24號薪資歸屬下個月
-    if(day==='24'){
+    // 9號薪資歸屬上個月
+    if(day==='09'){
       const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
-      belongMonth=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;
+      belongMonth=m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`;
     }
     if(!groups[belongMonth])groups[belongMonth]=[];
     groups[belongMonth].push(e);
@@ -714,7 +714,7 @@ function renderIncomeChart(){
   canvas.style.height=h+'px';
   ctx.scale(dpr,dpr);
 
-  // 計算月薪資（24號歸屬下月）
+  // 計算月薪資（9號歸上月，24號歸當月）
   const all=D.extraIncome||[];
   const monthlyIncome={};
   all.forEach(e=>{
@@ -722,10 +722,10 @@ function renderIncomeChart(){
     const ym=e.date.slice(0,7);
     const day=e.date.slice(8,10);
     let belongMonth=ym;
-    // 24號歸屬下個月
-    if(day==='24'){
+    // 9號歸上個月
+    if(day==='09'){
       const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
-      belongMonth=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;
+      belongMonth=m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`;
     }
     if(!monthlyIncome[belongMonth])monthlyIncome[belongMonth]=0;
     monthlyIncome[belongMonth]+=e.amount;
