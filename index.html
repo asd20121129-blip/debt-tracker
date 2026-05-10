@@ -497,7 +497,6 @@ const DEF = {
     {id:108,name:'上半月薪資',amount:31304,date:'2026-01-09',ts:1736380800000},
   ],
   receivables:[{id:1,name:'寶子',amount:200000,note:'借出款項'}],
-  payLogs:[],
   expenses:[
     {id:1,name:'儲蓄險',amount:60435,frequency:'yearly',date:'2027-01-05',day:5,account:'',note:'已繳9年'},
     {id:2,name:'國泰保險',amount:28271,frequency:'yearly',date:'2026-05-11',day:11,account:'永豐大戶',note:''},
@@ -1275,11 +1274,18 @@ function removeExpenseLog(logId){
   if(!confirm('確定刪除此支出紀錄？'))return;
   const log=D.expenseLogs.find(l=>l.id===logId);
   if(!log)return;
-  // 刪除紀錄
   D.expenseLogs=D.expenseLogs.filter(l=>l.id!==logId);
-  // 清除打勾狀態
-  const key=`exp-once-${log.expenseId}`;
-  if(D.paidItems)delete D.paidItems[key];
+  // 清除打勾狀態：依支出類型對應不同 key 格式
+  if(D.paidItems&&log.expenseId){
+    const curYM=nowYM();
+    const logYM=log.date?log.date.slice(0,7):curYM;
+    [
+      `exp-${log.expenseId}-${logYM}`,   // 月繳（含歸屬月份）
+      `exp-${log.expenseId}-${curYM}`,   // 月繳（當月，保險）
+      `exp-${log.expenseId}`,            // 年繳（key 無月份）
+      `exp-once-${log.expenseId}`,       // 單次（舊格式相容）
+    ].forEach(k=>{if(D.paidItems[k])delete D.paidItems[k];});
+  }
   save();render();
 }
 function onExpFreqChange(){
