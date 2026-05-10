@@ -647,12 +647,19 @@ function renderIncome(){
   if(!logEl)return;
   if(!all.length){logEl.innerHTML='<div class="empty">尚無收入紀錄</div>';return;}
 
-  // group by year-month, sorted desc
+  // group by 薪資歸屬月份
   const groups={};
   [...all].sort((a,b)=>b.date.localeCompare(a.date)).forEach(e=>{
     const ym=e.date.slice(0,7);
-    if(!groups[ym])groups[ym]=[];
-    groups[ym].push(e);
+    const day=e.date.slice(8,10);
+    let belongMonth=ym;
+    // 24號薪資歸屬下個月
+    if(day==='24'){
+      const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
+      belongMonth=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;
+    }
+    if(!groups[belongMonth])groups[belongMonth]=[];
+    groups[belongMonth].push(e);
   });
 
   // monthly fixed outgoing for balance calc
@@ -660,31 +667,28 @@ function renderIncome(){
     +(D.expenses||[]).filter(e=>e.frequency==='monthly').reduce((s,e)=>s+e.amount,0);
 
   logEl.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map((ym,idx)=>{
-    // 該月收入 = 上月24號 + 該月9號
-    const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
-    const prevM=m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`;
-    const prev24=all.find(e=>e.date&&e.date.startsWith(prevM)&&e.date.slice(8,10)==='24');
-    const this09=all.find(e=>e.date&&e.date.startsWith(ym)&&e.date.slice(8,10)==='09');
-    const monthTotal=(prev24?prev24.amount:0)+(this09?this09.amount:0);
-    const afterFixed=monthTotal-fixedMonthly;
+    const monthTotal=groups[ym].reduce((s,e)=>s+e.amount,0);
     const isOpen=ym===curYM; // 當月預設展開
-    const rows=groups[ym].map(e=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+    const rows=groups[ym].map(e=>{
+      // 判斷是上半月還是下半月
+      const day=e.date.slice(8,10);
+      const label=day==='24'?'上半月薪資':'下半月薪資';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
         <div>
-          <span style="font-size:13px;color:var(--text)">${e.name}</span>
+          <span style="font-size:13px;color:var(--text)">${label}</span>
           <span style="font-size:11px;color:var(--text3);margin-left:6px">${e.date.slice(5)}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-family:var(--mono);font-size:13px;color:var(--green)">+$${Math.round(e.amount).toLocaleString()}</span>
           <button class="btn-del" onclick="removeIncome(${e.id})">刪</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     return `<div class="month-group">
       <div class="month-hdr" onclick="toggleMonthGroup(this)">
         <span>${ym}</span>
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-family:var(--mono);color:var(--green)">+$${monthTotal.toLocaleString()}</span>
-          <span style="font-family:var(--mono);font-size:11px;color:${afterFixed>=0?'var(--green)':'var(--red)'}">扣固定後 ${fmt(afterFixed)}</span>
           <span style="color:var(--text3);font-size:12px">${isOpen?'▾':'▸'}</span>
         </div>
       </div>
@@ -710,22 +714,21 @@ function renderIncomeChart(){
   canvas.style.height=h+'px';
   ctx.scale(dpr,dpr);
 
-  // 計算月薪資（上月24+本月9）
+  // 計算月薪資（24號歸屬下月）
   const all=D.extraIncome||[];
   const monthlyIncome={};
   all.forEach(e=>{
     if(!e.date)return;
     const ym=e.date.slice(0,7);
     const day=e.date.slice(8,10);
+    let belongMonth=ym;
+    // 24號歸屬下個月
     if(day==='24'){
       const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
-      const nextM=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;
-      if(!monthlyIncome[nextM])monthlyIncome[nextM]=0;
-      monthlyIncome[nextM]+=e.amount;
-    } else if(day==='09'){
-      if(!monthlyIncome[ym])monthlyIncome[ym]=0;
-      monthlyIncome[ym]+=e.amount;
+      belongMonth=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;
     }
+    if(!monthlyIncome[belongMonth])monthlyIncome[belongMonth]=0;
+    monthlyIncome[belongMonth]+=e.amount;
   });
 
   const months=Object.keys(monthlyIncome).sort();
