@@ -1276,18 +1276,19 @@ function removeExpenseLog(logId){
   const log=D.expenseLogs.find(l=>l.id===logId);
   if(!log)return;
   D.expenseLogs=D.expenseLogs.filter(l=>l.id!==logId);
-  // 清除打勾狀態
   if(D.paidItems){
-    // 新版紀錄直接用 paidKey；舊版紀錄 fallback 多格式嘗試
-    const curYM=nowYM();
-    const logYM=log.date?log.date.slice(0,7):curYM;
-    const keysToTry=log.paidKey?[log.paidKey]:[
-      `exp-${log.expenseId}-${logYM}`,
-      `exp-${log.expenseId}-${curYM}`,
-      `exp-${log.expenseId}`,
-      `exp-once-${log.expenseId}`,
-    ];
-    keysToTry.forEach(k=>{if(k&&D.paidItems[k])delete D.paidItems[k];});
+    if(log.paidKey){
+      delete D.paidItems[log.paidKey];
+    } else {
+      // 舊版紀錄：用名稱反查 expense.id 再掃所有 key
+      const matchExp=(D.expenses||[]).find(e=>e.name===log.name);
+      const eid=log.expenseId||(matchExp?matchExp.id:null);
+      if(eid){
+        Object.keys(D.paidItems).forEach(k=>{
+          if(k===`exp-${eid}`||k.startsWith(`exp-${eid}-`)||k===`exp-once-${eid}`)delete D.paidItems[k];
+        });
+      }
+    }
   }
   save();render();
 }
