@@ -295,6 +295,14 @@ select.fi{appearance:none}
     </div>
     <div class="fg"><label class="fl">類型</label><select class="fi" id="d-type" onchange="onTypeChange()"></select></div>
     <div class="fg" id="d-deadline-grp" style="display:none"><label class="fl">到期日</label><input class="fi" type="date" id="d-deadline"></div>
+    <div class="fg" style="display:flex;align-items:center;gap:8px;padding:4px 0">
+      <input type="checkbox" id="d-showInBills" checked style="width:auto">
+      <label for="d-showInBills" style="margin:0;font-size:13px;cursor:pointer">顯示在本月待繳清單</label>
+    </div>
+    <div class="fg" style="display:flex;align-items:center;gap:8px;padding:4px 0">
+      <input type="checkbox" id="d-showInProgress" style="width:auto">
+      <label for="d-showInProgress" style="margin:0;font-size:13px;cursor:pointer">顯示在還款進度</label>
+    </div>
     <button class="btn btn-primary" onclick="saveDebt()">儲存</button>
   </div>
 </div>
@@ -414,14 +422,14 @@ const DEF = {
   ntfyTopic:'shen-debt-2026', ntfy7d:true, ntfy3d:true, ntfy1d:false,
   historicalPnl:-10000000,
   debts:[
-    {id:1,name:'連線銀行信貸',balance:2185304,paid:0,rate:3.68,monthly:21794,day:20,periods:120,type:'loan',deadline:null},
-    {id:2,name:'台北富邦信貸',balance:431407,paid:0,rate:4.2,monthly:6330,day:21,periods:78,type:'loan',deadline:null},
-    {id:8,name:'中租車貸',balance:570000,paid:0,rate:11.08,monthly:10598,day:6,periods:60,type:'c_二胎',deadline:null},
-    {id:9,name:'三商美邦保單借款',balance:430000,paid:0,rate:3.5,monthly:1254,day:8,periods:0,type:'loan',deadline:null},
-    {id:3,name:'永豐信用卡預借現金',balance:20000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null},
-    {id:4,name:'中信信用卡預借現金',balance:17000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null},
-    {id:5,name:'朋友 JY',balance:50000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01'},
-    {id:6,name:'朋友 IVY',balance:30000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01'},
+    {id:1,name:'連線銀行信貸',balance:2185304,paid:0,rate:3.68,monthly:21794,day:20,periods:120,type:'loan',deadline:null,showInBills:true,showInProgress:true},
+    {id:2,name:'台北富邦信貸',balance:431407,paid:0,rate:4.2,monthly:6330,day:21,periods:78,type:'loan',deadline:null,showInBills:true,showInProgress:true},
+    {id:8,name:'中租車貸',balance:570000,paid:0,rate:11.08,monthly:10598,day:6,periods:60,type:'c_二胎',deadline:null,showInBills:true,showInProgress:false},
+    {id:9,name:'三商美邦保單借款',balance:430000,paid:0,rate:3.5,monthly:1254,day:8,periods:0,type:'loan',deadline:null,showInBills:true,showInProgress:false},
+    {id:3,name:'永豐信用卡預借現金',balance:20000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null,showInBills:false,showInProgress:false},
+    {id:4,name:'中信信用卡預借現金',balance:17000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'card',deadline:null,showInBills:false,showInProgress:false},
+    {id:5,name:'朋友 JY',balance:50000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01',showInBills:false,showInProgress:false},
+    {id:6,name:'朋友 IVY',balance:30000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01',showInBills:false,showInProgress:false},
   ],
   extraIncome:[
     {id:101,name:'24號薪資',amount:62885,date:'2026-04-24',ts:1745452800000},
@@ -692,7 +700,7 @@ function renderOverview(){
   const monthKey=curYM;
   if(!D.paidItems)D.paidItems={};
   const billItems=[];
-  D.debts.filter(d=>d.monthly>0).forEach(d=>{
+  D.debts.filter(d=>d.monthly>0&&d.showInBills!==false).forEach(d=>{
     const key=`debt-${d.id}-${monthKey}`;
     billItems.push({key,name:d.name,amount:d.monthly,day:d.day,type:'debt',color:'var(--blue)'});
   });
@@ -735,11 +743,11 @@ function renderOverview(){
   document.getElementById('ov-cashflow').innerHTML=cf;
 
   // 還款進度
-  const loans=D.debts.filter(d=>d.type==='loan'||d.type==='card');
-  document.getElementById('ov-progress').innerHTML=loans.map(d=>{
+  const loans=D.debts.filter(d=>d.showInProgress===true);
+  document.getElementById('ov-progress').innerHTML=loans.length?loans.map(d=>{
     const tot=d.paid+d.balance;const pct=tot>0?Math.min(100,Math.round(d.paid/tot*100)):0;
     return `<div class="prog-wrap"><div class="prog-lbl"><span>${d.name}</span><span>已還${pct}%・剩 $${Math.round(d.balance).toLocaleString()}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${tColor(d.type)}"></div></div></div>`;
-  }).join('')||'<div style="font-size:12px;color:var(--text3)">無信貸資料</div>';
+  }).join(''):'<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px 0">無顯示項目<br><span style="font-size:10px;margin-top:4px;display:block">到負債清單編輯，勾選「顯示在還款進度」</span></div>';
 }
 
 // ── DEBTS ─────────────────────────────────────────────────────────────────────
@@ -875,8 +883,27 @@ function renderDebts(){
   document.getElementById('pay-log-list').innerHTML=months.length?months.map(ym=>`
     <div style="margin-bottom:12px">
       <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.05em;margin-bottom:6px">${ym}</div>
-      ${grouped[ym].map(l=>`<div class="pay-log">${l.date.slice(5)} · ${l.debtName} · <span style="color:var(--green);font-family:var(--mono)">+$${Math.round(l.amount).toLocaleString()}</span>${l.note?' · '+l.note:''}</div>`).join('')}
+      ${grouped[ym].map(l=>`
+        <div class="pay-log" style="display:flex;align-items:center;justify-content:space-between">
+          <div>${l.date.slice(5)} · ${l.debtName} · <span style="color:var(--green);font-family:var(--mono)">+$${Math.round(l.amount).toLocaleString()}</span>${l.note?' · '+l.note:''}</div>
+          <button onclick="removePayLog(${l.id})" style="padding:2px 6px;font-size:10px;border:none;background:rgba(192,57,43,.1);color:var(--red);border-radius:4px;cursor:pointer;margin-left:8px">刪</button>
+        </div>`).join('')}
     </div>`).join(''):'<div class="empty">尚無還款紀錄</div>';
+}
+function removePayLog(id){
+  if(!confirm('確定刪除此還款紀錄？'))return;
+  const log=D.payLogs.find(l=>l.id===id);
+  if(!log)return;
+  // 返還 debt.paid
+  const debt=D.debts.find(d=>d.id===log.debtId);
+  if(debt)debt.paid=Math.max(0,(debt.paid||0)-log.amount);
+  // 取消打勾狀態（如果有的話）
+  const curYM=nowYM();
+  const key=`debt-${log.debtId}-${curYM}`;
+  if(D.paidItems&&D.paidItems[key])delete D.paidItems[key];
+  // 刪除紀錄
+  D.payLogs=D.payLogs.filter(l=>l.id!==id);
+  save();render();
 }
 
 function toggleDebtGroup(id){
@@ -999,6 +1026,8 @@ function editDebt(id){
   document.getElementById('d-day').value=d.day;
   document.getElementById('d-periods').value=d.periods;
   document.getElementById('d-deadline').value=d.deadline||'';
+  document.getElementById('d-showInBills').checked=d.showInBills!==false;
+  document.getElementById('d-showInProgress').checked=d.showInProgress===true;
   fillTypeSelect('d-type',d.type);
   document.getElementById('d-deadline-grp').style.display=d.type==='friend'?'block':'none';
   openModal('modal-debt');
@@ -1007,7 +1036,9 @@ function saveDebt(){
   const name=document.getElementById('d-name').value.trim();
   const balance=parseFloat(document.getElementById('d-balance').value)||0;
   if(!name||!balance)return alert('請填寫名稱與餘額');
-  const obj={name,balance,paid:parseFloat(document.getElementById('d-paid').value)||0,rate:parseFloat(document.getElementById('d-rate').value)||0,monthly:parseFloat(document.getElementById('d-monthly').value)||0,day:parseInt(document.getElementById('d-day').value)||0,periods:parseInt(document.getElementById('d-periods').value)||0,type:document.getElementById('d-type').value,deadline:document.getElementById('d-deadline').value||null};
+  const showInBills=document.getElementById('d-showInBills').checked;
+  const showInProgress=document.getElementById('d-showInProgress').checked;
+  const obj={name,balance,paid:parseFloat(document.getElementById('d-paid').value)||0,rate:parseFloat(document.getElementById('d-rate').value)||0,monthly:parseFloat(document.getElementById('d-monthly').value)||0,day:parseInt(document.getElementById('d-day').value)||0,periods:parseInt(document.getElementById('d-periods').value)||0,type:document.getElementById('d-type').value,deadline:document.getElementById('d-deadline').value||null,showInBills,showInProgress};
   const eid=parseInt(document.getElementById('d-id').value);
   if(eid){const i=D.debts.findIndex(d=>d.id===eid);if(i>-1)D.debts[i]={...D.debts[i],...obj};}
   else D.debts.push({id:D.nextId++,...obj});
