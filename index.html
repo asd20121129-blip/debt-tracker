@@ -632,6 +632,7 @@ function togglePaid(key,name,amount,expenseId,itemType){
       D.expenseLogs.push({
         id:D.nextId++,
         expenseId:expenseId||null,
+        paidKey:key,
         name:name,
         amount:amount,
         date:new Date().toISOString().slice(0,10),
@@ -948,7 +949,7 @@ function renderOverview(){
   });
   (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{
     const key=`exp-${e.id}-${monthKey}`;
-    billItemsFull.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'expense',color:'var(--blue)',expenseId:null});
+    billItemsFull.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'expense',color:'var(--blue)',expenseId:e.id});
   });
   // 到期負債：只顯示當月到期
   D.debts.filter(d=>d.deadline&&d.deadline.startsWith(curYM)).forEach(d=>{
@@ -958,7 +959,7 @@ function renderOverview(){
   // 年費：只顯示當月到期
   (D.expenses||[]).filter(e=>e.frequency==='yearly'&&e.date&&e.date.startsWith(curYM)).forEach(e=>{
     const key=`exp-${e.id}`;
-    billItemsFull.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'expense',color:'var(--yellow)',expenseId:null});
+    billItemsFull.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'expense',color:'var(--yellow)',expenseId:e.id});
   });
   // 單次支出：只顯示當月
   (D.expenses||[]).filter(e=>e.frequency==='once'&&e.date&&e.date.startsWith(curYM)).forEach(e=>{
@@ -1275,16 +1276,18 @@ function removeExpenseLog(logId){
   const log=D.expenseLogs.find(l=>l.id===logId);
   if(!log)return;
   D.expenseLogs=D.expenseLogs.filter(l=>l.id!==logId);
-  // 清除打勾狀態：依支出類型對應不同 key 格式
-  if(D.paidItems&&log.expenseId){
+  // 清除打勾狀態
+  if(D.paidItems){
+    // 新版紀錄直接用 paidKey；舊版紀錄 fallback 多格式嘗試
     const curYM=nowYM();
     const logYM=log.date?log.date.slice(0,7):curYM;
-    [
-      `exp-${log.expenseId}-${logYM}`,   // 月繳（含歸屬月份）
-      `exp-${log.expenseId}-${curYM}`,   // 月繳（當月，保險）
-      `exp-${log.expenseId}`,            // 年繳（key 無月份）
-      `exp-once-${log.expenseId}`,       // 單次（舊格式相容）
-    ].forEach(k=>{if(D.paidItems[k])delete D.paidItems[k];});
+    const keysToTry=log.paidKey?[log.paidKey]:[
+      `exp-${log.expenseId}-${logYM}`,
+      `exp-${log.expenseId}-${curYM}`,
+      `exp-${log.expenseId}`,
+      `exp-once-${log.expenseId}`,
+    ];
+    keysToTry.forEach(k=>{if(k&&D.paidItems[k])delete D.paidItems[k];});
   }
   save();render();
 }
