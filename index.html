@@ -570,10 +570,14 @@ function togglePaid(key,name,amount){
   if(debt){
     if(!wasPaid){
       debt.paid=(debt.paid||0)+amount;
+      // 剩餘期數 -1
+      if(debt.periods>0)debt.periods=Math.max(0,debt.periods-1);
       if(!D.payLogs)D.payLogs=[];
       D.payLogs.push({id:D.nextId++,debtId:debt.id,debtName:name,amount:amount,note:'已繳',date:new Date().toISOString().slice(0,10),ts:Date.now(),type:'pay'});
     } else {
       debt.paid=Math.max(0,(debt.paid||0)-amount);
+      // 剩餘期數 +1（返還）
+      if(debt.periods>=0)debt.periods++;
       const idx=D.payLogs.findIndex(l=>l.debtName===name&&l.note==='已繳'&&l.amount===amount);
       if(idx>-1)D.payLogs.splice(idx,1);
     }
