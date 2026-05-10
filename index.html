@@ -653,8 +653,8 @@ function renderIncome(){
     const ym=e.date.slice(0,7);
     const day=e.date.slice(8,10);
     let belongMonth=ym;
-    // 9號薪資歸屬上個月
-    if(day==='09'){
+    // 只有薪資類型才跨月歸屬：9號歸上個月
+    if((e.name==='上半月薪資'||e.name==='下半月薪資')&&day==='09'){
       const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
       belongMonth=m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`;
     }
@@ -670,12 +670,17 @@ function renderIncome(){
     const monthTotal=groups[ym].reduce((s,e)=>s+e.amount,0);
     const isOpen=ym===curYM; // 當月預設展開
     const rows=groups[ym].map(e=>{
-      // 判斷是上半月還是下半月
+      // 判斷是否為薪資類型
+      const isSalary=e.name==='上半月薪資'||e.name==='下半月薪資';
       const day=e.date.slice(8,10);
-      const label=day==='24'?'上半月薪資':'下半月薪資';
+      let displayName=e.name;
+      // 薪資類型顯示上半月/下半月標籤
+      if(isSalary){
+        displayName=day==='24'?'上半月薪資':'下半月薪資';
+      }
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
         <div>
-          <span style="font-size:13px;color:var(--text)">${label}</span>
+          <span style="font-size:13px;color:var(--text)">${displayName}</span>
           <span style="font-size:11px;color:var(--text3);margin-left:6px">${e.date.slice(5)}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -714,16 +719,17 @@ function renderIncomeChart(){
   canvas.style.height=h+'px';
   ctx.scale(dpr,dpr);
 
-  // 計算月薪資（9號歸上月，24號歸當月）
+  // 計算月薪資（只有薪資類型：9號歸上月，24號歸當月；其他當月計）
   const all=D.extraIncome||[];
   const monthlyIncome={};
   all.forEach(e=>{
     if(!e.date)return;
     const ym=e.date.slice(0,7);
     const day=e.date.slice(8,10);
+    const isSalary=e.name==='上半月薪資'||e.name==='下半月薪資';
     let belongMonth=ym;
-    // 9號歸上個月
-    if(day==='09'){
+    // 只有薪資類型且9號才歸上個月
+    if(isSalary&&day==='09'){
       const y=parseInt(ym.split('-')[0]),m=parseInt(ym.split('-')[1]);
       belongMonth=m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`;
     }
