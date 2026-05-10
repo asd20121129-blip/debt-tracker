@@ -179,8 +179,8 @@ select.fi{appearance:none}
     <div class="fg" style="margin-bottom:8px">
       <label class="fl">類型</label>
       <select class="fi" id="inc-type-sel" onchange="onIncTypeChange()">
-        <option value="9號薪資">9號薪資</option>
-        <option value="24號薪資">24號薪資</option>
+        <option value="上半月薪資">上半月薪資</option>
+        <option value="下半月薪資">下半月薪資</option>
         <option value="年終獎金">年終獎金</option>
         <option value="三節獎金">三節獎金</option>
         <option value="其他獎金">其他獎金</option>
@@ -433,14 +433,14 @@ const DEF = {
     {id:6,name:'朋友 IVY',balance:30000,paid:0,rate:0,monthly:0,day:0,periods:0,type:'friend',deadline:'2026-05-01',showInBills:false,showInProgress:false},
   ],
   extraIncome:[
-    {id:101,name:'24號薪資',amount:62885,date:'2026-04-24',ts:1745452800000},
-    {id:102,name:'9號薪資',amount:32215,date:'2026-04-09',ts:1744156800000},
-    {id:103,name:'24號薪資',amount:39500,date:'2026-03-24',ts:1742774400000},
-    {id:104,name:'9號薪資',amount:53093,date:'2026-03-07',ts:1741305600000},
-    {id:105,name:'24號薪資',amount:30500,date:'2026-02-24',ts:1740355200000},
-    {id:106,name:'9號薪資',amount:31554,date:'2026-02-07',ts:1738886400000},
-    {id:107,name:'24號薪資',amount:30500,date:'2026-01-24',ts:1737676800000},
-    {id:108,name:'9號薪資',amount:31304,date:'2026-01-09',ts:1736380800000},
+    {id:101,name:'下半月薪資',amount:62885,date:'2026-04-24',ts:1745452800000},
+    {id:102,name:'上半月薪資',amount:32215,date:'2026-04-09',ts:1744156800000},
+    {id:103,name:'下半月薪資',amount:39500,date:'2026-03-24',ts:1742774400000},
+    {id:104,name:'上半月薪資',amount:53093,date:'2026-03-07',ts:1741305600000},
+    {id:105,name:'下半月薪資',amount:30500,date:'2026-02-24',ts:1740355200000},
+    {id:106,name:'上半月薪資',amount:31554,date:'2026-02-07',ts:1738886400000},
+    {id:107,name:'下半月薪資',amount:30500,date:'2026-01-24',ts:1737676800000},
+    {id:108,name:'上半月薪資',amount:31304,date:'2026-01-09',ts:1736380800000},
   ],
   receivables:[{id:1,name:'寶子',amount:200000,note:'借出款項'}],
   payLogs:[],
@@ -751,10 +751,14 @@ function renderOverview(){
     </div>`;
   }).join(''):'<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px 0">本月無待繳項目</div>';
 
-  // 本月收支（只算當月收入）
-  const thisMonthInc=(D.extraIncome||[]).filter(e=>e.date&&e.date.slice(0,7)===curYM).sort((a,b)=>(b.ts||0)-(a.ts||0));
-  let cf=thisMonthInc.length
-    ?thisMonthInc.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join('')
+  // 本月收支（上月24 + 本月9）
+  const incomeItems=[];
+  const last24=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(lastMonth)&&e.date.slice(8,10)==='24');
+  const cur09=(D.extraIncome||[]).find(e=>e.date&&e.date.startsWith(curYM)&&e.date.slice(8,10)==='09');
+  if(last24)incomeItems.push(last24);
+  if(cur09)incomeItems.push(cur09);
+  let cf=incomeItems.length
+    ?incomeItems.map(e=>`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}<span style="font-size:10px;color:var(--text3);margin-left:4px">${e.date||''}</span></span><span style="font-family:var(--mono);font-size:13px;color:var(--green)">${fmt(e.amount)}</span></div>`).join('')
     :`<div class="cf-row"><span style="color:var(--text3);font-size:12px">本月尚無收入紀錄</span><span></span></div>`;
   D.debts.filter(d=>d.monthly>0).forEach(d=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${d.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-d.monthly)}</span></div>`;});
   (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{cf+=`<div class="cf-row"><span style="color:var(--text2);font-size:13px">${e.name}</span><span style="font-family:var(--mono);font-size:13px;color:var(--red)">${fmt(-e.amount)}</span></div>`;});
@@ -1166,13 +1170,19 @@ function renderTrades(){
 }
 function renderPnlChart(){
   const canvas=document.getElementById('pnl-chart');
-  if(!canvas)return;
+  if(!canvas||!canvas.getContext)return;
   const ctx=canvas.getContext('2d');
+  const parent=canvas.parentElement;
+  if(!parent)return;
+  
   const dpr=window.devicePixelRatio||1;
-  const rect=canvas.getBoundingClientRect();
-  canvas.width=rect.width*dpr;canvas.height=180*dpr;
+  const w=parent.clientWidth||300;
+  const h=180;
+  canvas.width=w*dpr;
+  canvas.height=h*dpr;
+  canvas.style.width=w+'px';
+  canvas.style.height=h+'px';
   ctx.scale(dpr,dpr);
-  const w=rect.width,h=180;
 
   // 計算累積損益數據
   const allTrades=[...(D.trades||[])].sort((a,b)=>a.date.localeCompare(b.date));
@@ -1188,8 +1198,8 @@ function renderPnlChart(){
 
   const maxPnl=Math.max(...data.map(d=>d.pnl));
   const minPnl=Math.min(...data.map(d=>d.pnl));
-  const range=maxPnl-minPnl||1;
-  const padding={top:20,bottom:30,left:50,right:20};
+  const range=Math.max(Math.abs(maxPnl-minPnl),1);
+  const padding={top:20,bottom:30,left:60,right:20};
   const chartW=w-padding.left-padding.right;
   const chartH=h-padding.top-padding.bottom;
 
