@@ -681,7 +681,7 @@ function renderOverview(){
   const mDebt=D.debts.filter(d=>d.monthly>0).reduce((s,d)=>s+d.monthly,0);
   const mExpense=(D.expenses||[]).filter(e=>e.frequency==='monthly').reduce((s,e)=>s+e.amount,0);
   const bal=inc-mDebt-mExpense;
-  const tPnl=D.trades.reduce((s,t)=>s+t.pnl,0);
+  const tPnl=(D.trades||[]).reduce((s,t)=>s+t.pnl,0);
   document.getElementById('ov-metrics').innerHTML=`
     <div class="metric"><div class="metric-lbl">總負債</div><div class="metric-val red">-$${Math.round(totalDebt).toLocaleString()}</div></div>
     <div class="metric"><div class="metric-lbl">月結餘</div><div class="metric-val ${cc(bal)}">${fmt(bal)}</div></div>
