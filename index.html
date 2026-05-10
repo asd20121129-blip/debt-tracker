@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
-:root{--bg:#f2f1ef;--bg2:#fff;--bg3:#eae9e5;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);--text:#1a1a1a;--text2:#555;--text3:#aaa;--red:#c0392b;--green:#1e7e4a;--yellow:#9a6800;--blue:#1a6fbf;--mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif}
+:root{--bg:#f2f1ef;--bg2:#fff;--bg3:#eae9e5;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);--text:#1a1a1a;--text2:#555;--text3:#aaa;--red:#c0392b;--green:#1e7e4a;--yellow:#9a6800;--blue:#1a6fbf;--purple:#8e44ad;--mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh}
 .nav{position:sticky;top:0;z-index:100;background:rgba(242,241,239,0.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;height:50px;gap:2px}
@@ -137,6 +137,7 @@ select.fi{appearance:none}
   <button class="nav-tab active" onclick="showPage('overview',this)">總覽</button>
   <button class="nav-tab" onclick="showPage('income',this)">收入</button>
   <button class="nav-tab" onclick="showPage('debts',this)">負債</button>
+  <button class="nav-tab" onclick="showPage('expenses',this)">支出</button>
   <button class="nav-tab" onclick="showPage('trades',this)">操盤</button>
   <button class="nav-tab" onclick="showPage('settings',this)">設定</button>
 </nav>
@@ -237,6 +238,14 @@ select.fi{appearance:none}
   <div class="card"><div id="pay-log-list"><div class="empty">尚無還款紀錄</div></div></div>
 </div>
 
+<!-- 支出 -->
+<div class="page" id="page-expenses">
+  <div class="sec-hdr" style="margin-top:4px"><span class="sec-lbl">定期支出</span><button class="btn btn-xs" onclick="openModal('modal-expense')">＋ 新增</button></div>
+  <div id="expenses-list"></div>
+  <div class="sec-hdr"><span class="sec-lbl">支出紀錄</span></div>
+  <div class="card"><div id="expense-log-list"><div class="empty">尚無支出紀錄</div></div></div>
+</div>
+
 <!-- 操盤 -->
 <div class="page" id="page-trades">
   <div class="sec-hdr" style="margin-top:4px"><span class="sec-lbl">累計損益</span><button class="btn btn-xs" onclick="openModal('modal-trade')">＋ 新增</button></div>
@@ -251,11 +260,6 @@ select.fi{appearance:none}
     <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px">雲端同步</div>
     <div style="font-size:12px;color:var(--text2);line-height:1.8">使用 Firebase 自動同步，開啟即同步，手機電腦共享資料。</div>
     <button class="btn btn-secondary" style="margin-top:10px;padding:9px;font-size:12px" onclick="manualSync().then(()=>render())">立即同步</button>
-  </div>
-  <div class="card">
-    <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">定期支出</div>
-    <div id="expense-settings"></div>
-    <button class="btn btn-xs" style="margin-top:8px" onclick="openModal('modal-expense')">＋ 新增定期支出</button>
   </div>
   <div class="card">
     <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">通知設定（ntfy）</div>
@@ -331,6 +335,30 @@ select.fi{appearance:none}
       <label for="d-showInProgress" style="margin:0;font-size:13px;cursor:pointer">顯示在還款進度</label>
     </div>
     <button class="btn btn-primary" onclick="saveDebt()">儲存</button>
+  </div>
+</div>
+
+<!-- Modal: 新增/編輯支出 -->
+<div class="modal-overlay" id="modal-expense" onclick="closeOut(event,'modal-expense')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-expense')">×</button>
+    <div class="modal-title" id="expense-modal-title">新增支出</div>
+    <input type="hidden" id="exp-id">
+    <div class="fg"><label class="fl">名稱</label><input class="fi" id="exp-name" placeholder="保險費/訂閱費/所得稅"></div>
+    <div class="fg"><label class="fl">金額</label><input class="fi" type="number" id="exp-amount"></div>
+    <div class="fg">
+      <label class="fl">頻率</label>
+      <select class="fi" id="exp-frequency" onchange="onExpFreqChange()">
+        <option value="monthly">每月</option>
+        <option value="yearly">每年</option>
+        <option value="once">單次</option>
+      </select>
+    </div>
+    <div class="fg" id="exp-day-grp"><label class="fl">繳費日（號）</label><input class="fi" type="number" id="exp-day" min="1" max="31" placeholder="每月幾號"></div>
+    <div class="fg" id="exp-date-grp" style="display:none"><label class="fl">繳費日期</label><input class="fi" type="date" id="exp-date"></div>
+    <div class="fg"><label class="fl">帳戶</label><input class="fi" id="exp-account" placeholder="永豐/中信" list="account-list"></div>
+    <div class="fg"><label class="fl">備註</label><input class="fi" id="exp-note" placeholder="選填"></div>
+    <button class="btn btn-primary" onclick="saveExpense()">儲存</button>
   </div>
 </div>
 
@@ -478,7 +506,9 @@ const DEF = {
   ],
   accountHistory:['永豐銀行','永豐大戶','中信','富邦','連線','中租匯款','三商美邦匯款'],
   trades:[],
-  payLogs:[], paidItems:{}, nextId:200
+  payLogs:[],
+  expenseLogs:[],
+  paidItems:{}, nextId:200
 };
 
 // ── FIREBASE SYNC ─────────────────────────────────────────────────────────────
@@ -584,36 +614,62 @@ function showPage(id,el){
   render();
 }
 
-function render(){renderOverview();renderIncome();renderDebts();renderTrades();renderSettings();updateSymbolList();}
+function render(){renderOverview();renderIncome();renderDebts();renderExpenses();renderTrades();renderSettings();updateSymbolList();}
 
 // ── TOGGLE PAID ───────────────────────────────────────────────────────────────
-function togglePaid(key,name,amount){
+function togglePaid(key,name,amount,expenseId,itemType){
   if(!D.paidItems)D.paidItems={};
   const wasPaid=!!D.paidItems[key];
   D.paidItems[key]=!wasPaid;
   
-  // 找到對應負債，累計已還款金額
-  const debt=D.debts.find(d=>d.name===name);
-  if(debt){
+  // 判斷是負債還是支出
+  const isExpense=itemType==='expense'||itemType==='expense-once'||expenseId;
+  
+  if(isExpense){
+    // 支出項目：記錄到 expenseLogs
     if(!wasPaid){
-      debt.paid=(debt.paid||0)+amount;
-      // 剩餘期數 -1
-      if(debt.periods>0)debt.periods=Math.max(0,debt.periods-1);
-      // 全清檢查
-      if(debt.balance<=debt.paid&&debt.periods===0){
-        alert('🎉 恭喜！已清償 '+name);
-      }
-      if(!D.payLogs)D.payLogs=[];
-      D.payLogs.push({id:D.nextId++,debtId:debt.id,debtName:name,amount:amount,note:'已繳',date:new Date().toISOString().slice(0,10),ts:Date.now(),type:'pay'});
+      if(!D.expenseLogs)D.expenseLogs=[];
+      const expense=expenseId?D.expenses.find(e=>e.id===expenseId):null;
+      D.expenseLogs.push({
+        id:D.nextId++,
+        expenseId:expenseId||null,
+        name:name,
+        amount:amount,
+        date:new Date().toISOString().slice(0,10),
+        note:'已繳',
+        account:expense?expense.account||'':'',
+        ts:Date.now()
+      });
     } else {
-      debt.paid=Math.max(0,(debt.paid||0)-amount);
-      // 剩餘期數 +1（返還）
-      if(debt.periods>=0)debt.periods++;
-      const idx=D.payLogs.findIndex(l=>l.debtName===name&&l.note==='已繳'&&l.amount===amount);
-      if(idx>-1)D.payLogs.splice(idx,1);
+      // 取消勾選：刪除紀錄
+      const idx=D.expenseLogs.findIndex(l=>l.name===name&&l.amount===amount);
+      if(idx>-1)D.expenseLogs.splice(idx,1);
+    }
+  } else {
+    // 負債項目：記錄到 payLogs
+    const debt=D.debts.find(d=>d.name===name||d.name===name.replace(' 到期',''));
+    if(debt){
+      if(!wasPaid){
+        debt.paid=(debt.paid||0)+amount;
+        // 剩餘期數 -1（只有月繳才減）
+        if(debt.periods>0&&!name.includes('到期'))debt.periods=Math.max(0,debt.periods-1);
+        // 全清檢查
+        if(debt.balance<=debt.paid&&debt.periods===0){
+          alert('🎉 恭喜！已清償 '+debt.name);
+        }
+        // 記錄到繳款紀錄
+        if(!D.payLogs)D.payLogs=[];
+        D.payLogs.push({id:D.nextId++,debtId:debt.id,debtName:debt.name,amount:amount,note:'已繳',date:new Date().toISOString().slice(0,10),ts:Date.now()});
+      } else {
+        debt.paid=Math.max(0,(debt.paid||0)-amount);
+        // 剩餘期數 +1（返還，只有月繳）
+        if(debt.periods>=0&&!name.includes('到期'))debt.periods++;
+        const idx=D.payLogs.findIndex(l=>l.debtName===debt.name&&l.amount===amount);
+        if(idx>-1)D.payLogs.splice(idx,1);
+      }
     }
   }
-  save();renderOverview();renderDebts();
+  save();render();
 }
 
 // ── INCOME ────────────────────────────────────────────────────────────────────
@@ -889,33 +945,38 @@ function renderOverview(){
   const billItemsFull=[];
   D.debts.filter(d=>d.monthly>0&&d.showInBills!==false).forEach(d=>{
     const key=`debt-${d.id}-${monthKey}`;
-    billItemsFull.push({key,name:d.name,amount:d.monthly,day:d.day,type:'debt',color:'var(--blue)'});
+    billItemsFull.push({key,name:d.name,amount:d.monthly,day:d.day,type:'debt',color:'var(--blue)',expenseId:null});
   });
   (D.expenses||[]).filter(e=>e.frequency==='monthly').forEach(e=>{
     const key=`exp-${e.id}-${monthKey}`;
-    billItemsFull.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'expense',color:'var(--blue)'});
+    billItemsFull.push({key,name:e.name,amount:e.amount,day:e.day||1,type:'expense',color:'var(--blue)',expenseId:null});
   });
   // 到期負債：只顯示當月到期
   D.debts.filter(d=>d.deadline&&d.deadline.startsWith(curYM)).forEach(d=>{
     const key=`deadline-${d.id}`;
-    billItemsFull.push({key,name:d.name+' 到期',amount:d.balance,day:parseInt((d.deadline||'').split('-')[2])||0,type:'deadline',color:'var(--red)'});
+    billItemsFull.push({key,name:d.name+' 到期',amount:d.balance,day:parseInt((d.deadline||'').split('-')[2])||0,type:'deadline',color:'var(--red)',expenseId:null});
   });
   // 年費：只顯示當月到期
   (D.expenses||[]).filter(e=>e.frequency==='yearly'&&e.date&&e.date.startsWith(curYM)).forEach(e=>{
     const key=`exp-${e.id}`;
-    billItemsFull.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'expense',color:'var(--yellow)'});
+    billItemsFull.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'expense',color:'var(--yellow)',expenseId:null});
+  });
+  // 單次支出：只顯示當月
+  (D.expenses||[]).filter(e=>e.frequency==='once'&&e.date&&e.date.startsWith(curYM)).forEach(e=>{
+    const key=`exp-once-${e.id}`;
+    billItemsFull.push({key,name:e.name,amount:e.amount,day:parseInt((e.date||'').split('-')[2])||0,type:'expense-once',color:'var(--purple)',expenseId:e.id});
   });
   billItemsFull.sort((a,b)=>a.day-b.day);
 
   document.getElementById('ov-alerts').innerHTML=billItemsFull.length?billItemsFull.map(item=>{
     const paid=!!(D.paidItems||{})[item.key];
     return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);${paid?'opacity:.4':''}">
-      <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${item.color};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:${paid?item.color:'transparent'}" onclick="togglePaid('${item.key}','${item.name}',${item.amount})">
+      <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${item.color};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:${paid?item.color:'transparent'}" onclick="togglePaid('${item.key}','${item.name}',${item.amount},${item.expenseId||'null'},'${item.type}')">
         ${paid?'<span style="color:#fff;font-size:12px;line-height:1">✓</span>':''}
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;${paid?'text-decoration:line-through;color:var(--text3)':''}">${item.name}</div>
-        <div style="font-size:11px;color:var(--text3)">${item.day?item.day+'號':''}${item.type==='deadline'?' 到期':item.type==='expense'?' 定期支出':' 還款'}</div>
+        <div style="font-size:11px;color:var(--text3)">${item.day?item.day+'號':''}${item.type==='deadline'?' 到期':item.type==='expense-once'?' 單次支出':item.type==='expense'?' 定期支出':' 還款'}</div>
       </div>
       <span style="font-family:var(--mono);font-size:12px;color:var(--red);white-space:nowrap">-$${Math.round(item.amount).toLocaleString()}</span>
     </div>`;
@@ -962,26 +1023,32 @@ function renderNetWorthChart(){
   canvas.style.height=h+'px';
   ctx.scale(dpr,dpr);
 
-  // 計算月淨資產：所有收入 - 已扣款負債 + 操盤損益
+  // 計算月淨資產：所有收入 - 已扣款負債 - 支出紀錄 + 操盤損益
   const allIncome=D.extraIncome||[];
   const allPayments=D.payLogs||[];
+  const allExpenses=D.expenseLogs||[];
   const allTrades=D.trades||[];
   const histPnl=D.historicalPnl||0;
 
   const monthlyData={};
   allIncome.forEach(e=>{
     const ym=e.date.slice(0,7);
-    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,pnl:0};
+    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,expense:0,pnl:0};
     monthlyData[ym].income+=e.amount;
   });
   allPayments.forEach(p=>{
     const ym=p.date.slice(0,7);
-    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,pnl:0};
+    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,expense:0,pnl:0};
     monthlyData[ym].paid+=p.amount;
+  });
+  allExpenses.forEach(ex=>{
+    const ym=ex.date.slice(0,7);
+    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,expense:0,pnl:0};
+    monthlyData[ym].expense+=ex.amount;
   });
   allTrades.forEach(t=>{
     const ym=t.date.slice(0,7);
-    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,pnl:0};
+    if(!monthlyData[ym])monthlyData[ym]={income:0,paid:0,expense:0,pnl:0};
     monthlyData[ym].pnl+=t.pnl;
   });
 
@@ -990,7 +1057,7 @@ function renderNetWorthChart(){
   const allMonths=Object.keys(monthlyData).sort();
   allMonths.forEach(m=>{
     const d=monthlyData[m];
-    currentNW+=d.income-d.paid+d.pnl;
+    currentNW+=d.income-d.paid-d.expense+d.pnl;
   });
 
   // 計算年度資料（只顯示有資料的月份）
@@ -1001,7 +1068,7 @@ function renderNetWorthChart(){
   // 先累加到選擇年份之前的所有資料
   allMonths.filter(m=>m<selectedYear+'-01').forEach(m=>{
     const d=monthlyData[m];
-    cumulative+=d.income-d.paid+d.pnl;
+    cumulative+=d.income-d.paid-d.expense+d.pnl;
   });
   
   // 只顯示有資料的月份
@@ -1009,7 +1076,7 @@ function renderNetWorthChart(){
     const ym=`${selectedYear}-${String(m).padStart(2,'0')}`;
     if(!monthlyData[ym])continue; // 沒資料跳過
     const d=monthlyData[ym];
-    cumulative+=d.income-d.paid+d.pnl;
+    cumulative+=d.income-d.paid-d.expense+d.pnl;
     yearMonths.push({ym,value:cumulative,month:m});
   }
 
@@ -1018,6 +1085,7 @@ function renderNetWorthChart(){
   // 顯示當下淨資產和計算公式
   const totalIncome=allIncome.reduce((s,e)=>s+e.amount,0);
   const totalPaid=allPayments.reduce((s,p)=>s+p.amount,0);
+  const totalExpense=allExpenses.reduce((s,ex)=>s+ex.amount,0);
   const totalPnl=allTrades.reduce((s,t)=>s+t.pnl,0);
   
   document.getElementById('net-worth-current').innerHTML=`目前淨資產：<span style="color:${currentNW>=0?'var(--green)':'var(--red)'}">$${formatNW(currentNW)}</span> <span style="font-size:10px;color:var(--text3)">▾</span>`;
@@ -1026,6 +1094,7 @@ function renderNetWorthChart(){
     歷史損益：$${histPnl.toLocaleString()}<br>
     總收入：+$${totalIncome.toLocaleString()}<br>
     已還款：-$${totalPaid.toLocaleString()}<br>
+    已支出：-$${totalExpense.toLocaleString()}<br>
     操盤損益：${totalPnl>=0?'+':''}$${totalPnl.toLocaleString()}<br>
     <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px;font-weight:600">
       淨資產 = $${currentNW.toLocaleString()}
@@ -1101,6 +1170,96 @@ function toggleDebtDetail(id){
   el.classList.toggle('open');
   const arr=document.getElementById('debt-arr-'+id);
   if(arr)arr.textContent=el.classList.contains('open')?'▾':'▸';
+}
+
+// ── EXPENSES ──────────────────────────────────────────────────────────────────
+function renderExpenses(){
+  const list=document.getElementById('expenses-list');
+  if(!list)return;
+  const expenses=D.expenses||[];
+  if(!expenses.length){list.innerHTML='<div class="empty">尚無支出紀錄</div>';return;}
+  
+  const freqLabels={monthly:'月繳',yearly:'年繳',once:'單次'};
+  const groups={monthly:[],yearly:[],once:[]};
+  expenses.forEach(e=>groups[e.frequency].push(e));
+  
+  let html='';
+  ['monthly','yearly','once'].forEach(freq=>{
+    if(!groups[freq].length)return;
+    html+=`<div class="sec-hdr"><span class="sec-lbl">${freqLabels[freq]}</span></div>`;
+    groups[freq].forEach(e=>{
+      const dateInfo=e.frequency==='monthly'?`${e.day||'?'}號`:e.date?e.date:'';
+      html+=`<div class="card" style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:500;color:var(--text)">${e.name}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${dateInfo}${e.account?' · '+e.account:''}${e.note?' · '+e.note:''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:var(--mono);font-size:14px;color:var(--red)">-$${Math.round(e.amount).toLocaleString()}</span>
+            <button class="btn-edit" onclick="editExpense(${e.id})">編輯</button>
+            <button class="btn-del" onclick="removeExpense(${e.id})">刪</button>
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+  list.innerHTML=html;
+  
+  // 支出紀錄
+  const logList=document.getElementById('expense-log-list');
+  if(!logList)return;
+  const logs=(D.expenseLogs||[]).slice().sort((a,b)=>b.ts-a.ts);
+  if(!logs.length){logList.innerHTML='<div class="empty">尚無支出紀錄</div>';return;}
+  logList.innerHTML=logs.map(log=>`<div class="log-item">
+    <div style="flex:1">
+      <div style="font-size:12px;color:var(--text2)">${log.date} · ${log.name} · $${Math.round(log.amount).toLocaleString()}${log.account?' · '+log.account:''}${log.note&&log.note!=='已繳'?' · '+log.note:''}</div>
+    </div>
+    <button class="btn-del" onclick="removeExpenseLog(${log.id})">刪</button>
+  </div>`).join('');
+}
+function editExpense(id){
+  const e=D.expenses.find(x=>x.id===id);if(!e)return;
+  document.getElementById('expense-modal-title').textContent='編輯支出';
+  document.getElementById('exp-id').value=id;
+  document.getElementById('exp-name').value=e.name;
+  document.getElementById('exp-amount').value=e.amount;
+  document.getElementById('exp-frequency').value=e.frequency;
+  document.getElementById('exp-day').value=e.day||'';
+  document.getElementById('exp-date').value=e.date||'';
+  document.getElementById('exp-account').value=e.account||'';
+  document.getElementById('exp-note').value=e.note||'';
+  onExpFreqChange();
+  openModal('modal-expense');
+}
+function saveExpense(){
+  const name=document.getElementById('exp-name').value.trim();
+  const amount=parseFloat(document.getElementById('exp-amount').value)||0;
+  const frequency=document.getElementById('exp-frequency').value;
+  if(!name||!amount)return alert('請填寫名稱與金額');
+  const obj={name,amount,frequency,day:parseInt(document.getElementById('exp-day').value)||null,date:document.getElementById('exp-date').value||null,account:document.getElementById('exp-account').value.trim(),note:document.getElementById('exp-note').value.trim()};
+  const eid=parseInt(document.getElementById('exp-id').value);
+  if(eid){const i=D.expenses.findIndex(e=>e.id===eid);if(i>-1)D.expenses[i]={...D.expenses[i],...obj};}
+  else{if(!D.expenses)D.expenses=[];D.expenses.push({id:D.nextId++,...obj});}
+  if(obj.account&&!D.accountHistory.includes(obj.account))D.accountHistory.push(obj.account);
+  save();closeModal('modal-expense');render();
+}
+function removeExpense(id){if(confirm('確定刪除此支出？')){D.expenses=D.expenses.filter(e=>e.id!==id);save();render();}}
+function removeExpenseLog(logId){
+  if(!confirm('確定刪除此支出紀錄？'))return;
+  const log=D.expenseLogs.find(l=>l.id===logId);
+  if(!log)return;
+  // 刪除紀錄
+  D.expenseLogs=D.expenseLogs.filter(l=>l.id!==logId);
+  // 清除打勾狀態
+  const key=`exp-once-${log.expenseId}`;
+  if(D.paidItems)delete D.paidItems[key];
+  save();render();
+}
+function onExpFreqChange(){
+  const freq=document.getElementById('exp-frequency').value;
+  document.getElementById('exp-day-grp').style.display=freq==='monthly'?'block':'none';
+  document.getElementById('exp-date-grp').style.display=freq==='yearly'||freq==='once'?'block':'none';
 }
 
 function renderDebts(){
@@ -1220,7 +1379,7 @@ function renderDebts(){
       <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.05em;margin-bottom:6px">${ym}</div>
       ${grouped[ym].map(l=>`
         <div class="pay-log" style="display:flex;align-items:center;justify-content:space-between">
-          <div>${l.date.slice(5)} · ${l.debtName} · <span style="color:var(--green);font-family:var(--mono)">+$${Math.round(l.amount).toLocaleString()}</span>${l.note?' · '+l.note:''}</div>
+          <div style="font-size:12px;color:var(--text2)">${l.date.slice(5)} · ${l.debtName} · $${Math.round(l.amount).toLocaleString()}${l.note?' · '+l.note:''}</div>
           <button onclick="removePayLog(${l.id})" style="padding:2px 6px;font-size:10px;border:none;background:rgba(192,57,43,.1);color:var(--red);border-radius:4px;cursor:pointer;margin-left:8px">刪</button>
         </div>`).join('')}
     </div>`).join(''):'<div class="empty">尚無還款紀錄</div>';
@@ -1741,5 +1900,3 @@ fillTypeSelect('d-type','loan');
 
 (async()=>{await loadFromFirebase();render();})();
 </script>
-</body>
-</html>
