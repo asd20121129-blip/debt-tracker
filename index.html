@@ -436,20 +436,19 @@ select.fi{appearance:none}
 <div class="modal-overlay" id="modal-trade" onclick="closeOut(event,'modal-trade')">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-trade')">×</button>
-    <div class="modal-title">新增交易紀錄</div>
+    <div class="modal-title" id="trade-modal-title">新增交易紀錄</div>
     <div class="fr">
       <div class="fg"><label class="fl">日期</label><input class="fi" type="date" id="t-date"></div>
       <div class="fg">
-        <label class="fl">標的</label>
-        <input class="fi" id="t-symbol" placeholder="台指期" list="symbol-list">
-        <datalist id="symbol-list"></datalist>
+        <label class="fl">帳戶</label>
+        <select class="fi" id="t-account">
+          <option value="新光">新光</option>
+          <option value="永豐金">永豐金</option>
+          <option value="統一期貨">統一期貨</option>
+        </select>
       </div>
     </div>
-    <div class="fr">
-      <div class="fg"><label class="fl">類型</label><select class="fi" id="t-type"><option value="stock">現股</option><option value="stock-futures">股期</option><option value="index-large">台指大</option><option value="index-mini">台指小</option><option value="index-micro">台指微</option></select></div>
-      <div class="fg"><label class="fl">口數/張數</label><input class="fi" type="number" id="t-qty"></div>
-    </div>
-    <div class="fg"><label class="fl">損益（虧損填負數）</label><input class="fi" type="number" id="t-pnl"></div>
+    <div class="fg"><label class="fl">損益（虧損填負數）</label><input class="fi" type="number" id="t-pnl" placeholder="0"></div>
     <div class="fg">
       <label class="fl">三色標記</label>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
@@ -459,7 +458,6 @@ select.fi{appearance:none}
       </div>
       <input type="hidden" id="t-mark" value="">
     </div>
-    <div class="fg"><label class="fl">備註</label><input class="fi" id="t-note" placeholder="選填"></div>
     <div class="fg">
       <label class="fl">檢討（哪邊沒做好？重來會在哪個點做不同決定？）</label>
       <textarea class="fi" id="t-review" rows="3" placeholder="進場SOP依據？哪邊沒做好？重來一次，我會在哪個具體的點做不一樣的決定？" style="resize:none;line-height:1.6"></textarea>
@@ -470,7 +468,7 @@ select.fi{appearance:none}
       <button type="button" class="btn btn-secondary" style="padding:8px;font-size:12px;margin-bottom:8px" onclick="document.getElementById('t-images').click()">📷 上傳截圖</button>
       <div id="t-image-preview" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
-    <button class="btn btn-primary" onclick="addTrade()">新增</button>
+    <button class="btn btn-primary" onclick="addTrade()">儲存</button>
   </div>
 </div>
 
@@ -644,7 +642,7 @@ function showPage(id,el){
   render();
 }
 
-function render(){renderOverview();renderIncome();renderDebts();renderExpenses();renderTrades();renderSettings();updateSymbolList();}
+function render(){renderOverview();renderIncome();renderDebts();renderExpenses();renderTrades();renderSettings();}
 
 // ── TOGGLE PAID ───────────────────────────────────────────────────────────────
 function togglePaid(key,name,amount,expenseId,itemType){
@@ -1697,22 +1695,20 @@ function renderTrades(){
     grouped[ym].push(t);
   });
   const months=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
-  const tl={stock:'現股','stock-futures':'股期','index-large':'台指大','index-mini':'台指小','index-micro':'台指微'};
-
   document.getElementById('tr-list').innerHTML=months.length?months.map(ym=>`
     <div style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.05em;margin-bottom:8px">${ym}</div>
       ${grouped[ym].sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`
         <div class="trade-row">
           <div class="trade-hdr">
-            <span style="font-size:13px;font-weight:500">${markColors[t.mark]||''} ${t.symbol}</span>
+            <span style="font-size:13px;font-weight:500">${markColors[t.mark]||''} ${t.account||'—'}</span>
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-family:var(--mono);font-size:12px;color:var(--${cc(t.pnl)})">${fmt(t.pnl)}</span>
               <button onclick="editTrade(${t.id})" style="padding:3px 6px;font-size:10px;border:none;background:var(--bg3);color:var(--text2);border-radius:4px;cursor:pointer">編輯</button>
               <button onclick="removeTrade(${t.id})" style="padding:3px 6px;font-size:10px;border:none;background:rgba(192,57,43,.1);color:var(--red);border-radius:4px;cursor:pointer">刪</button>
             </div>
           </div>
-          <div class="trade-sub">${t.date.slice(5)} ／ ${tl[t.type]||t.type} ／ ${t.qty}口/張${t.note?' ／ '+t.note:''}${t.mark?' ／ '+markLabels[t.mark]:''}</div>
+          <div class="trade-sub">${t.date.slice(5)}${t.account?' ／ '+t.account:''}${t.mark?' ／ '+markLabels[t.mark]:''}</div>
           ${t.review?`<div style="font-size:11px;color:var(--text2);margin-top:4px;padding:6px 8px;background:var(--bg3);border-radius:6px;line-height:1.6">📋 ${t.review}</div>`:''}
           ${t.images&&t.images.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${t.images.map((img,i)=>`<img src="${img}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="viewTradeImage('${t.id}',${i})">`).join('')}</div>`:''}
         </div>`).join('')}
@@ -1815,13 +1811,11 @@ function editTrade(id){
   const t=D.trades.find(x=>x.id===id);
   if(!t)return;
   document.getElementById('t-date').value=t.date;
-  document.getElementById('t-symbol').value=t.symbol;
-  document.getElementById('t-type').value=t.type;
-  document.getElementById('t-qty').value=t.qty;
+  document.getElementById('t-account').value=t.account||'新光';
   document.getElementById('t-pnl').value=t.pnl;
-  document.getElementById('t-note').value=t.note||'';
   document.getElementById('t-review').value=t.review||'';
   if(t.mark)selectMark(t.mark);
+  document.getElementById('trade-modal-title').textContent='編輯交易紀錄';
   tradeEditId=id;
   openModal('modal-trade');
 }
@@ -1857,26 +1851,19 @@ function removeTradeImage(idx){tradeImageData[idx]=null;const items=document.get
 function addTrade(){
   if(!D.trades)D.trades=[];
   const date=document.getElementById('t-date').value;
-  const symbol=document.getElementById('t-symbol').value.trim();
+  const account=document.getElementById('t-account').value;
   const pnl=parseFloat(document.getElementById('t-pnl').value);
-  if(!date||!symbol||isNaN(pnl))return alert('請填寫日期、標的與損益');
+  if(!date||isNaN(pnl))return alert('請填寫日期與損益');
   const images=tradeImageData.filter(Boolean).slice(0,5);
   const mark=document.getElementById('t-mark').value||'';
   const review=document.getElementById('t-review').value.trim();
-  const type=document.getElementById('t-type').value;
-  const qty=parseInt(document.getElementById('t-qty').value)||0;
-  const note=document.getElementById('t-note').value.trim();
-
-  // 記憶標的
-  if(!D.symbolHistory)D.symbolHistory=[];
-  if(!D.symbolHistory.includes(symbol))D.symbolHistory.push(symbol);
 
   if(tradeEditId){
     const idx=D.trades.findIndex(t=>t.id===tradeEditId);
-    if(idx>-1)D.trades[idx]={id:tradeEditId,date,symbol,pnl,type,qty,note,mark,review,images};
+    if(idx>-1)D.trades[idx]={id:tradeEditId,date,account,pnl,mark,review,images};
     tradeEditId=null;
   } else {
-    D.trades.push({id:D.nextId++,date,symbol,pnl,type,qty,note,mark,review,images});
+    D.trades.push({id:D.nextId++,date,account,pnl,mark,review,images});
   }
 
   tradeImageData=[];selectedMark='';
@@ -1884,14 +1871,9 @@ function addTrade(){
   document.getElementById('t-images').value='';
   document.getElementById('t-review').value='';
   document.getElementById('t-mark').value='';
-  document.getElementById('t-note').value='';
+  document.getElementById('trade-modal-title').textContent='新增交易紀錄';
   ['green','yellow','red'].forEach(c=>{const btn=document.getElementById('mark-'+c);if(btn)btn.style.background='var(--bg3)';});
-  save();closeModal('modal-trade');updateSymbolList();render();
-}
-function updateSymbolList(){
-  const list=document.getElementById('symbol-list');
-  if(!list)return;
-  list.innerHTML=(D.symbolHistory||[]).map(s=>`<option value="${s}">`).join('');
+  save();closeModal('modal-trade');render();
 }
 
 // ── NTFY ──────────────────────────────────────────────────────────────────────
