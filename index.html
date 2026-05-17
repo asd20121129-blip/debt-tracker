@@ -434,7 +434,7 @@ select.fi{appearance:none}
 
 <!-- Modal: 交易 -->
 <div class="modal-overlay" id="modal-trade" onclick="closeOut(event,'modal-trade')">
-  <div class="modal">
+  <div class="modal" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeModal('modal-trade')">×</button>
     <div class="modal-title" id="trade-modal-title">新增交易紀錄</div>
     <div class="fr">
@@ -1866,13 +1866,6 @@ function addTrade(){
     D.trades.push({id:D.nextId++,date,account,pnl,mark,review,images});
   }
 
-  tradeImageData=[];selectedMark='';
-  document.getElementById('t-image-preview').innerHTML='';
-  document.getElementById('t-images').value='';
-  document.getElementById('t-review').value='';
-  document.getElementById('t-mark').value='';
-  document.getElementById('trade-modal-title').textContent='新增交易紀錄';
-  ['green','yellow','red'].forEach(c=>{const btn=document.getElementById('mark-'+c);if(btn)btn.style.background='var(--bg3)';});
   save();closeModal('modal-trade');render();
 }
 
@@ -1927,7 +1920,28 @@ function viewTradeImage(tradeId,imgIdx){const t=D.trades.find(x=>x.id===parseInt
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 function openModal(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  if(id==='modal-trade')resetTradeModal();
+}
+function resetTradeModal(){
+  tradeEditId=null;
+  selectedMark='';
+  tradeImageData=[];
+  const title=document.getElementById('trade-modal-title');
+  if(title)title.textContent='新增交易紀錄';
+  const preview=document.getElementById('t-image-preview');
+  if(preview)preview.innerHTML='';
+  const img=document.getElementById('t-images');
+  if(img)img.value='';
+  const review=document.getElementById('t-review');
+  if(review)review.value='';
+  const mark=document.getElementById('t-mark');
+  if(mark)mark.value='';
+  const pnl=document.getElementById('t-pnl');
+  if(pnl)pnl.value='';
+  ['green','yellow','red'].forEach(c=>{const btn=document.getElementById('mark-'+c);if(btn)btn.style.background='var(--bg3)';});
+}
 function closeOut(e,id){if(e.target.id===id)closeModal(id);}
 function showCfm(id){document.getElementById(id).classList.add('show');}
 function hideCfm(id){const el=document.getElementById(id);if(el)el.classList.remove('show');}
