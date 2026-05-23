@@ -1887,6 +1887,81 @@ async function testNtfy(){
 }
 function setNtfyStatus(state,msg){document.getElementById('ntfy-dot').className='ntfy-dot ntfy-'+state;document.getElementById('ntfy-msg').textContent=msg;}
 
+// ── 自動到期通知 ───────────────────────────────────────────────────────────────
+async function checkAndNotify(){
+  if(!D.ntfyTopic)return;
+  const thresholds=[];
+  if(D.ntfy7d)thresholds.push(7);
+  if(D.ntfy3d)thresholds.push(3);
+  if(D.ntfy1d)thresholds.push(1);
+  if(!thresholds.length)return;
+
+  // 防重複：用 localStorage 記錄今天已發過的 key
+  const today=new Date().toISOString().slice(0,10);
+  const sentKey='ntfy-sent-'+today;
+  let sent={};
+  try{sent=JSON.parse(localStorage.getItem(sentKey)||'{}');}catch{}
+
+  const msgs=[];
+
+  // 1. 負債月還款（依 day 欄位判斷距今天數）
+  (D.debts||[]).filter(d=>d.showInBills&&d.monthly>0&&d.day>0).forEach(d=>{
+    const now=new Date();
+    const due=new Date(now.getFullYear(),now.getMonth(),d.day);
+    if(due<now)due.setMonth(due.getMonth()+1);
+    const days=Math.ceil((due-now)/86400000);
+    thresholds.forEach(t=>{
+      if(days===t){
+        const k=`debt-${d.id}-${t}d-${today}`;
+        if(!sent[k]){msgs.push({k,title:`💸 ${d.name} 還款提醒`,msg:`${d.day}號還款 $${d.monthly.toLocaleString()}，還有 ${t} 天`,priority:'default'});}
+      }
+    });
+  });
+
+  // 2. 負債到期日
+  (D.debts||[]).filter(d=>d.deadline).forEach(d=>{
+    const days=Math.ceil((new Date(d.deadline)-new Date())/86400000);
+    thresholds.forEach(t=>{
+      if(days===t){
+        const k=`ddl-${d.id}-${t}d-${today}`;
+        if(!sent[k]){msgs.push({k,title:`⚠️ ${d.name} 到期提醒`,msg:`到期日 ${d.deadline}，剩 ${t} 天，金額 $${d.balance.toLocaleString()}`,priority:'high'});}
+      }
+    });
+  });
+
+  // 3. 年繳支出
+  (D.expenses||[]).filter(e=>e.frequency==='yearly'&&e.date).forEach(e=>{
+    const days=Math.ceil((new Date(e.date)-new Date())/86400000);
+    thresholds.forEach(t=>{
+      if(days===t){
+        const k=`exp-yr-${e.id}-${t}d-${today}`;
+        if(!sent[k]){msgs.push({k,title:`📅 ${e.name} 繳費提醒`,msg:`繳費日 ${e.date}，剩 ${t} 天，金額 $${e.amount.toLocaleString()}`,priority:'default'});}
+      }
+    });
+  });
+
+  // 4. 月繳支出（依 day 欄位）
+  (D.expenses||[]).filter(e=>e.frequency==='monthly'&&e.day>0).forEach(e=>{
+    const now=new Date();
+    const due=new Date(now.getFullYear(),now.getMonth(),e.day);
+    if(due<now)due.setMonth(due.getMonth()+1);
+    const days=Math.ceil((due-now)/86400000);
+    thresholds.forEach(t=>{
+      if(days===t){
+        const k=`exp-mo-${e.id}-${t}d-${today}`;
+        if(!sent[k]){msgs.push({k,title:`📅 ${e.name} 繳費提醒`,msg:`${e.day}號繳費 $${e.amount.toLocaleString()}，還有 ${t} 天`,priority:'default'});}
+      }
+    });
+  });
+
+  // 逐一發送
+  for(const m of msgs){
+    const ok=await sendNtfy(m.title,m.msg,m.priority);
+    if(ok){sent[m.k]=1;}
+  }
+  if(msgs.length)localStorage.setItem(sentKey,JSON.stringify(sent));
+}
+
 // ── DATA IO ───────────────────────────────────────────────────────────────────
 function exportData(){
   const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
@@ -1972,5 +2047,6 @@ fillTypeSelect('d-type','loan');
   if(D.ntfy1d===undefined)D.ntfy1d=false;
   D.debts.forEach(d=>{if(d.paid===undefined)d.paid=0;});
   render();
+  checkAndNotify();
 })();
 </script>
